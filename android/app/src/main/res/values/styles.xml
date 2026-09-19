@@ -8,7 +8,7 @@
     </style>
 
     <!--
-      Launch theme: the Mbari mark on the app's background (dark in night
+      Launch theme: the Mbarĩ mark on the app's background (dark in night
       mode), through androidx.core:core-splashscreen, so Android 7–11 match 12+.
       MainActivity keeps it up until JavaScript draws the same mark in the same
       place (src/components/brand/LaunchScreen.tsx), then hands over.

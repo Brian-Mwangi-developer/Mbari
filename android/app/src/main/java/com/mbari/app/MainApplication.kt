@@ -37,17 +37,17 @@ class MainApplication : Application(), ReactApplication {
 
   /**
    * Android 8+ drops notifications without a channel. The backend sends to
-   * "recommendations" (NOTIFY_ANDROID_CHANNEL_ID); readers can silence it on
-   * its own in system settings without turning off the app.
+   * "alerts" (NOTIFY_ANDROID_CHANNEL_ID); people can silence it on its own in
+   * system settings without turning off the app.
    */
   private fun createNotificationChannels() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
     val channel = NotificationChannel(
-      "recommendations",
-      "Recommendations",
+      "alerts",
+      "Alerts",
       NotificationManager.IMPORTANCE_DEFAULT,
     ).apply {
-      description = "The article worth your time, inside the windows you choose."
+      description = "News from the sources you follow, waiting for you to approve it."
     }
     getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
   }

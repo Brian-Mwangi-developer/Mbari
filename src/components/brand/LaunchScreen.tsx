@@ -30,9 +30,9 @@ type Exit = 'fade' | 'handoff';
 /**
  * The first thing JavaScript draws: the same mark, in the same place and
  * colours, as the native splash, which it then releases. Once the session is
- * known it either fades into the app, or, for someone signed out, unfolds
- * the mark back into a bookmark and flies it to the landing screen, which
- * builds it up again.
+ * known it either fades into the app, or, for someone signed out, lifts the
+ * tilde off the stem and flies the stem to the landing screen, which stands
+ * it up and lays the tilde over it again.
  */
 export function LaunchScreen() {
   const {status} = useSession();
@@ -50,8 +50,8 @@ export function LaunchScreen() {
   const ground = useSharedValue(1);
   const markOpacity = useSharedValue(1);
   const fly = useSharedValue(0);
-  const fold = useSharedValue(1);
-  const drop = useSharedValue(1);
+  const grow = useSharedValue(1);
+  const voice = useSharedValue(1);
 
   React.useEffect(() => {
     const timers = [
@@ -98,22 +98,19 @@ export function LaunchScreen() {
       timers.push(setTimeout(finish, FADE_MS + 80));
     } else {
       const easing = Easing.inOut(Easing.cubic);
-      fold.value = withTiming(0, {duration: FLY_MS * 0.7, easing});
-      drop.value = withTiming(0, {duration: FLY_MS * 0.45, easing});
+      voice.value = withTiming(0, {duration: FLY_MS * 0.45, easing});
       fly.value = withTiming(1, {duration: FLY_MS, easing});
       timers.push(setTimeout(() => (ground.value = withTiming(0, {duration: FADE_MS})), FLY_MS));
       timers.push(setTimeout(finish, FLY_MS + FADE_MS));
     }
     return () => timers.forEach(clearTimeout);
-  }, [exit, finish, fly, fold, drop, ground, markOpacity]);
+  }, [exit, finish, fly, voice, ground, markOpacity]);
 
   const markWidth = MARK.width * SPLASH_SCALE;
   const markHeight = MARK.height * SPLASH_SCALE;
-  const nudgeX = MARK.nudge.x * SPLASH_SCALE;
-  const nudgeY = MARK.nudge.y * SPLASH_SCALE;
-  // Where the mark's centre sits in the window: its middle, nudged like the native drawable.
-  const centreX = frame ? frame.width / 2 + nudgeX : 0;
-  const centreY = frame ? frame.height / 2 + nudgeY : 0;
+  // Where the mark's centre sits in the window: dead centre, like the native drawable.
+  const centreX = frame ? frame.width / 2 : 0;
+  const centreY = frame ? frame.height / 2 : 0;
   const target = hero
     ? {
         dx: hero.x + hero.width / 2 - centreX,
@@ -126,8 +123,8 @@ export function LaunchScreen() {
   const markStyle = useAnimatedStyle(() => ({
     opacity: markOpacity.value,
     transform: [
-      {translateX: nudgeX + target.dx * fly.value},
-      {translateY: nudgeY + target.dy * fly.value},
+      {translateX: target.dx * fly.value},
+      {translateY: target.dy * fly.value},
       {scale: 1 + (target.scale - 1) * fly.value},
     ],
   }));
@@ -137,13 +134,13 @@ export function LaunchScreen() {
   }
 
   return (
-    <View style={StyleSheet.absoluteFill} onLayout={onLayout} pointerEvents="auto" accessibilityLabel="Opening Mbari">
+    <View style={StyleSheet.absoluteFill} onLayout={onLayout} pointerEvents="auto" accessibilityLabel="Opening Mbarĩ">
       <StatusBar barStyle={resolved === 'dark' ? 'light-content' : 'dark-content'} />
       <Animated.View style={[StyleSheet.absoluteFill, {backgroundColor: colors.ground}, groundStyle]} />
       {/* Centred by layout, so it is drawn in the very first frame, exactly where the native splash has it. */}
       <View style={styles.centre} pointerEvents="none">
         <Animated.View style={[{width: markWidth, height: markHeight}, markStyle]}>
-          <AnimatedMark width={markWidth} fold={fold} drop={drop} />
+          <AnimatedMark width={markWidth} grow={grow} voice={voice} />
         </Animated.View>
         {slow && !exit ? <ActivityIndicator style={styles.spinner} color={colors.ink} /> : null}
       </View>

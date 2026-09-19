@@ -8,26 +8,16 @@ import {PortalHost} from '@rn-primitives/portal';
 
 import {LaunchScreen} from '@/components/brand/LaunchScreen';
 import {AppShell} from '@/components/layout';
-import {PushBanner} from '@/components/notifications/PushBanner';
-import {ReaderHost} from '@/components/reader/ReaderHost';
 import {AppearanceProvider} from '@/lib/appearance';
-import {DeckProvider} from '@/lib/deck';
-import {DeliveryProvider} from '@/lib/delivery';
 import {LaunchProvider} from '@/lib/launch';
 import {NavigationProvider, useNavigation} from '@/lib/navigation';
-import {NotificationsProvider} from '@/lib/notifications';
-import {OfflineProvider} from '@/lib/offline';
 import {SessionProvider, useSession} from '@/lib/session';
-import {SourcesProvider} from '@/lib/sources';
-import {ReaderProvider} from '@/lib/reader';
-import {ReaderSettingsProvider} from '@/lib/reader-settings';
-import {ArchiveScreen} from '@/screens/ArchiveScreen';
 import {InterestsOnboarding} from '@/screens/InterestsOnboarding';
-import {DetailHost} from '@/screens/detail/DetailHost';
-import {SettingsScreen} from '@/screens/SettingsScreen';
-import {SourcesScreen} from '@/screens/SourcesScreen';
 import {SignInScreen} from '@/screens/SignInScreen';
-import {TodayScreen} from '@/screens/TodayScreen';
+import {AlertsScreen} from '@/screens/tabs/AlertsScreen';
+import {CommunityScreen} from '@/screens/tabs/CommunityScreen';
+import {MeScreen} from '@/screens/tabs/MeScreen';
+import {RepliesScreen} from '@/screens/tabs/RepliesScreen';
 
 function App() {
   return (
@@ -37,10 +27,8 @@ function App() {
           <SessionProvider>
             <LaunchProvider>
               <NavigationProvider>
-                <ReaderSettingsProvider>
-                  <Root />
-                  <PortalHost />
-                </ReaderSettingsProvider>
+                <Root />
+                <PortalHost />
               </NavigationProvider>
               {/* Above everything, until it has handed over. */}
               <LaunchScreen />
@@ -52,10 +40,7 @@ function App() {
   );
 }
 
-/**
- * Everything below the session gate. Sources, the reader and the offline shelf
- * all belong to the signed-in user, so they are only mounted once someone is.
- */
+/** Signed out: sign in. Signed in but new: onboarding. Otherwise the four tabs. */
 function Root() {
   const {status, account} = useSession();
 
@@ -73,47 +58,23 @@ function Root() {
   }
 
   return (
-    <SourcesProvider>
-      <OfflineProvider>
-        <DeckProvider>
-          <DeliveryProvider>
-            <ReaderProvider>
-              <NotificationsProvider>
-                <AppShell>
-                  <ActiveScreen />
-                </AppShell>
-                <DetailHost />
-                <TabReader />
-                <PushBanner />
-              </NotificationsProvider>
-            </ReaderProvider>
-          </DeliveryProvider>
-        </DeckProvider>
-      </OfflineProvider>
-    </SourcesProvider>
+    <AppShell>
+      <ActiveScreen />
+    </AppShell>
   );
-}
-
-/**
- * The reader over the tabs. A detail page is its own Modal window, so while
- * one is open it hosts the reader itself (see DetailScreen's `overlay`).
- */
-function TabReader() {
-  const {detail} = useNavigation();
-  return detail ? null : <ReaderHost />;
 }
 
 function ActiveScreen() {
   const {tab} = useNavigation();
   switch (tab) {
-    case 'Today':
-      return <TodayScreen />;
-    case 'Archive':
-      return <ArchiveScreen />;
-    case 'Sources':
-      return <SourcesScreen />;
-    case 'Settings':
-      return <SettingsScreen />;
+    case 'Alerts':
+      return <AlertsScreen />;
+    case 'Community':
+      return <CommunityScreen />;
+    case 'Replies':
+      return <RepliesScreen />;
+    case 'Me':
+      return <MeScreen />;
   }
 }
 

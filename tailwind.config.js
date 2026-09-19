@@ -11,10 +11,11 @@ module.exports = {
         // Registered in android/app/src/main/java/com/mbari/app/MainApplication.kt
         sans: ['PlusJakartaSans'],
         serif: ['Newsreader'],
-        // Android's built-in monospace; used for the forwarding address.
+        // Android's built-in monospace; used for small provenance lines and the forwarding address.
         mono: ['monospace'],
       },
       colors: {
+        clay: 'hsl(var(--clay) / <alpha-value>)',
         border: 'hsl(var(--border) / <alpha-value>)',
         input: 'hsl(var(--input) / <alpha-value>)',
         ring: 'hsl(var(--ring) / <alpha-value>)',
@@ -52,11 +53,13 @@ module.exports = {
       borderWidth: {
         hairline: hairlineWidth(),
       },
+      // Hard where facts are: small corners, like the stem. Only the play
+      // button and the tilde are round.
       borderRadius: {
-        xl: 'calc(var(--radius) + 8px)',
+        xl: 'calc(var(--radius) + 4px)',
         lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 4px)',
-        sm: 'calc(var(--radius) - 8px)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
       },
     },
   },

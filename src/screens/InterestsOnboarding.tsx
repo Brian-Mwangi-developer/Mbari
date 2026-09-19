@@ -1,27 +1,48 @@
 import * as React from 'react';
-import {ActivityIndicator, Pressable, ScrollView, View} from 'react-native';
+import {ActivityIndicator, Pressable, ScrollView, StatusBar, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 import * as api from '@/api';
 import type {InterestTopic} from '@/api';
+import {TildeMarker} from '@/components/brand/Tilde';
 import {TopicChip} from '@/components/interests/TopicChip';
 import {Text} from '@/components/ui/text';
+import {useAppearance} from '@/lib/appearance';
 import {useSession} from '@/lib/session';
 
 /**
- * One question after first sign-in. Skippable: with nothing picked, Mbari
- * starts from the sources the reader follows and learns from what they read.
+ * Until the backend suggests its own, these are what a community usually
+ * needs to hear about: the things county and national sites publish.
+ */
+const STARTER_TOPICS: InterestTopic[] = [
+  'Farming',
+  'County budget',
+  'Public participation',
+  'Jobs',
+  'Bursaries',
+  'Health',
+  'Water',
+  'Roads',
+  'Education',
+  'Land',
+  'Elections',
+].map(label => ({slug: label.toLowerCase().replace(/\s+/g, '-'), label}));
+
+/**
+ * One question after first sign-in. Skippable: with nothing picked, Mbarĩ
+ * starts from the sources you connect and learns what your community reads.
  */
 export function InterestsOnboarding() {
   const {refresh} = useSession();
+  const {resolved} = useAppearance();
   const [topics, setTopics] = React.useState<InterestTopic[] | null>(null);
   const [picked, setPicked] = React.useState<string[]>([]);
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
     api.getInterests().then(
-      data => setTopics(data.suggestions),
-      () => setTopics([]),
+      data => setTopics(data.suggestions.length > 0 ? data.suggestions : STARTER_TOPICS),
+      () => setTopics(STARTER_TOPICS),
     );
   }, []);
 
@@ -45,14 +66,15 @@ export function InterestsOnboarding() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
+      <StatusBar barStyle={resolved === 'dark' ? 'light-content' : 'dark-content'} />
       <ScrollView className="flex-1" contentContainerClassName="px-6 pb-8 pt-12" showsVerticalScrollIndicator={false}>
-        <View className="h-[2px] w-12 rounded-full bg-primary" />
+        <TildeMarker width={44} />
         <Text className="mt-7 font-serif text-[40px] font-medium leading-[46px] tracking-tight">
-          What do you like reading about?
+          What should Mbarĩ watch for your community?
         </Text>
         <Text className="mt-4 font-serif text-[19px] leading-[29px] text-foreground/70">
-          Pick a few to start. After that Mbari learns from what you read, like, save and pass on, and keeps up
-          as your taste moves.
+          Pick a few topics. Mbarĩ watches county and government sites for them, and tells you when something
+          changes. You decide what gets passed on.
         </Text>
 
         <View className="mt-9 flex-row flex-wrap gap-2">
@@ -71,7 +93,7 @@ export function InterestsOnboarding() {
           accessibilityRole="button"
           disabled={saving}
           onPress={() => finish(picked).catch(() => {})}
-          className="h-14 items-center justify-center rounded-full bg-primary active:opacity-85">
+          className="h-14 items-center justify-center rounded-lg bg-primary active:opacity-85">
           <Text className="text-[17px] font-semibold text-primary-foreground">
             {saving ? 'Saving…' : picked.length > 0 ? `Continue with ${picked.length}` : 'Continue'}
           </Text>

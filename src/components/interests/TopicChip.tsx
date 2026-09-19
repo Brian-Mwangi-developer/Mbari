@@ -1,8 +1,10 @@
 import * as React from 'react';
-import {Pressable, View} from 'react-native';
+import {Pressable} from 'react-native';
 
+import {Icon} from '@/components/icons/Icon';
 import {Text} from '@/components/ui/text';
-import {CheckIcon, CloseIcon, PlusIcon} from '@/lib/icons';
+import {useAppearance} from '@/lib/appearance';
+import {THEME} from '@/lib/theme';
 import {cn} from '@/lib/utils';
 
 type Props = {
@@ -13,9 +15,14 @@ type Props = {
   mode?: 'toggle' | 'remove';
 };
 
-/** An interest as a pill. Selected ones take the accent. */
+/**
+ * A topic as a small flat block: an outline when off, solid ink when on. No
+ * tinted fills; the state is the fill and the icon.
+ */
 export function TopicChip({label, selected, onPress, mode = 'toggle'}: Props) {
-  const Icon = selected ? (mode === 'remove' ? CloseIcon : CheckIcon) : PlusIcon;
+  const {resolved} = useAppearance();
+  const colors = THEME[resolved];
+  const name = selected ? (mode === 'remove' ? 'close' : 'check') : 'plus';
   return (
     <Pressable
       accessibilityRole={mode === 'remove' ? 'button' : 'checkbox'}
@@ -23,15 +30,11 @@ export function TopicChip({label, selected, onPress, mode = 'toggle'}: Props) {
       accessibilityState={mode === 'remove' ? undefined : {checked: selected}}
       onPress={onPress}
       className={cn(
-        'flex-row items-center gap-1.5 rounded-full border px-4 py-2.5 active:opacity-70',
-        selected ? 'border-primary bg-primary/10' : 'border-border bg-card',
+        'flex-row items-center gap-2 rounded-lg border px-4 py-3 active:opacity-70',
+        selected ? 'border-foreground bg-foreground' : 'border-foreground/30 bg-transparent',
       )}>
-      <View>
-        <Icon size={15} strokeWidth={2.25} className={selected ? 'text-primary' : 'text-muted-foreground'} />
-      </View>
-      <Text className={cn('text-[15px] font-medium', selected ? 'text-foreground' : 'text-foreground/80')}>
-        {label}
-      </Text>
+      <Icon name={name} size={16} strokeWidth={2.4} color={selected ? colors.background : colors.mutedForeground} />
+      <Text className={cn('text-[15px] font-semibold', selected ? 'text-background' : 'text-foreground')}>{label}</Text>
     </Pressable>
   );
 }

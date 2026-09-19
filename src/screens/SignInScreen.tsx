@@ -27,12 +27,12 @@ import {ApiError} from '@/api';
 import {GoogleButton} from '@/components/auth/GoogleButton';
 import {AnimatedMark, Mark} from '@/components/brand/Mark';
 import {Wordmark} from '@/components/brand/Wordmark';
+import {Icon} from '@/components/icons/Icon';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Text} from '@/components/ui/text';
 import {useAppearance} from '@/lib/appearance';
 import {GoogleSignInError} from '@/lib/google-sign-in';
-import {MailIcon} from '@/lib/icons';
 import {useLaunch} from '@/lib/launch';
 import {useSession} from '@/lib/session';
 import {cn} from '@/lib/utils';
@@ -40,24 +40,24 @@ import {cn} from '@/lib/utils';
 type Mode = 'signIn' | 'signUp';
 
 /**
- * What the mark means, told by building it: the bookmark, the fold that makes
- * the L, and the day's pick landing in its corner.
+ * What Mbarĩ does, in three lines. The mark builds itself up alongside, but
+ * nothing here explains the mark: people need to know what the app is for.
  */
 const STORY = [
   {
-    part: 'The bookmark',
-    title: 'A place to come back to.',
-    body: 'The newsletters and feeds you already follow, gathered in one calm reader.',
+    part: 'Watch',
+    title: 'We watch the sites for you.',
+    body: 'Mbarĩ keeps an eye on county and government websites, and tells you as soon as something changes.',
   },
   {
-    part: 'The fold',
-    title: 'Folded into an L, for Mbari.',
-    body: 'It reads everything that arrives, so you never have to open all of it.',
+    part: 'In your language',
+    title: 'Said the way your family says it.',
+    body: 'Each notice becomes a short summary with its source, and a voice message in Gĩkũyũ.',
   },
   {
-    part: 'The amber dot',
-    title: 'One pick, worth your time.',
-    body: 'Each day it sets aside the piece that fits what you read, like and save.',
+    part: 'You decide',
+    title: 'Nothing goes out until you approve.',
+    body: 'Then Mbarĩ phones the people you choose, and they can answer back by voice.',
   },
 ] as const;
 
@@ -159,7 +159,7 @@ export function SignInScreen() {
         {/* Signed out, AppShell isn't mounted to set this. */}
         {statusBar}
         <View className="items-center pt-5">
-          <Wordmark size={21} />
+          <Wordmark size={20} />
         </View>
 
         <Story />
@@ -169,13 +169,13 @@ export function SignInScreen() {
           <Button
             variant="outline"
             size="lg"
-            className="h-14 rounded-xl"
+            className="h-14 rounded-lg border-foreground"
             disabled={busy !== null}
             onPress={() => {
               setWithEmail(true);
               setError(null);
             }}>
-            <MailIcon size={20} className="text-foreground" />
+            <Icon name="mail" size={20} />
             <Text className="text-[17px] font-medium">Continue with Email</Text>
           </Button>
           {error ? <Text className="text-center text-[15px] text-destructive">{error}</Text> : null}
@@ -193,12 +193,12 @@ export function SignInScreen() {
         <ScrollView
           contentContainerClassName="flex-grow justify-center px-6 pb-16"
           keyboardShouldPersistTaps="handled">
-          <Mark width={44} />
+          <Mark width={40} />
           <Text className="mt-8 font-serif text-[40px] font-bold leading-[46px] tracking-tight">
             {isSignUp ? 'Create your account' : 'Welcome back'}
           </Text>
           <Text className="mt-3 font-serif text-[20px] leading-[30px] text-foreground/75">
-            {isSignUp ? 'Then point your newsletters and feeds here.' : 'Sign in to see today\'s pick.'}
+            {isSignUp ? 'Then choose what your community should hear about.' : 'Sign in to see what is new for your community.'}
           </Text>
 
           <View className="mt-10 gap-3">
@@ -209,7 +209,7 @@ export function SignInScreen() {
                 onChangeText={setName}
                 autoCapitalize="words"
                 autoComplete="name"
-                className="h-14 rounded-xl text-[17px]"
+                className="h-14 rounded-lg border-foreground/40 text-[17px]"
               />
             )}
             <Input
@@ -220,7 +220,7 @@ export function SignInScreen() {
               autoCorrect={false}
               keyboardType="email-address"
               autoComplete="email"
-              className="h-14 rounded-xl text-[17px]"
+              className="h-14 rounded-lg border-foreground/40 text-[17px]"
             />
             <Input
               placeholder="Password"
@@ -228,7 +228,7 @@ export function SignInScreen() {
               onChangeText={setPassword}
               secureTextEntry
               autoCapitalize="none"
-              className="h-14 rounded-xl text-[17px]"
+              className="h-14 rounded-lg border-foreground/40 text-[17px]"
             />
             {isSignUp && password.length > 0 && password.length < 8 && (
               <Text className="text-[14px] text-muted-foreground">At least 8 characters.</Text>
@@ -238,7 +238,7 @@ export function SignInScreen() {
           {error && <Text className="mt-4 text-[15px] text-destructive">{error}</Text>}
 
           <View className="mt-8 gap-1">
-            <Button size="lg" className="h-14 rounded-xl" disabled={!canSubmit || busy !== null} onPress={submit}>
+            <Button size="lg" className="h-14 rounded-lg" disabled={!canSubmit || busy !== null} onPress={submit}>
               {busy === 'email' ? (
                 <ActivityIndicator />
               ) : (
@@ -248,7 +248,7 @@ export function SignInScreen() {
             <Button
               variant="ghost"
               size="lg"
-              className="h-14 rounded-xl"
+              className="h-14 rounded-lg"
               onPress={() => {
                 setMode(isSignUp ? 'signIn' : 'signUp');
                 setError(null);
@@ -260,7 +260,7 @@ export function SignInScreen() {
             <Button
               variant="ghost"
               size="lg"
-              className="h-12 rounded-xl"
+              className="h-12 rounded-lg"
               onPress={() => {
                 setWithEmail(false);
                 setError(null);
@@ -276,22 +276,23 @@ export function SignInScreen() {
 
 /**
  * The landing's centre: the mark builds itself up while three short lines say
- * what each part means. It plays once on its own; a tap on the steps or a
+ * what the app does. It plays once on its own; a tap on the steps or a
  * swipe takes over. With a screen reader on it waits to be stepped through.
  */
 function Story() {
   const {launching, setHero} = useLaunch();
   const reduceMotion = useReducedMotion();
   const {width: screenWidth} = useWindowDimensions();
-  const heroWidth = Math.round(Math.min(132, Math.max(96, screenWidth * 0.3)));
+  const heroWidth = Math.round(Math.min(120, Math.max(84, screenWidth * 0.27)));
 
   const [step, setStep] = React.useState(0);
   const [shown, setShown] = React.useState(0);
   const [autoplay, setAutoplay] = React.useState(true);
   const heroRef = React.useRef<React.ComponentRef<typeof View>>(null);
 
-  const fold = useSharedValue(0);
-  const drop = useSharedValue(0);
+  // Arriving from the launch screen the stem is already standing, tilde lifted away.
+  const grow = useSharedValue(launching ? 1 : 0);
+  const voice = useSharedValue(0);
   // Arriving from the launch screen the mark is already in place; otherwise it rises in.
   const rise = useSharedValue(launching ? 1 : 0);
   const caption = useSharedValue(launching ? 0 : 1);
@@ -318,20 +319,20 @@ function Story() {
       return;
     }
     rise.value = withTiming(1, {duration: reduceMotion ? 0 : 520, easing: Easing.out(Easing.cubic)});
+    grow.value = withTiming(1, {duration: reduceMotion ? 0 : 520, easing: Easing.out(Easing.cubic)});
     caption.value = withTiming(1, {duration: reduceMotion ? 0 : 420});
-  }, [launching, reduceMotion, rise, caption]);
+  }, [launching, reduceMotion, rise, grow, caption]);
 
-  // The mark follows the story.
+  // The mark follows the story: the tilde arrives on the second line.
   React.useEffect(() => {
     if (launching) {
       return;
     }
-    fold.value = withTiming(step >= 1 ? 1 : 0, {duration: reduceMotion ? 0 : 620, easing: Easing.out(Easing.cubic)});
-    drop.value =
-      step >= 2 && !reduceMotion
+    voice.value =
+      step >= 1 && !reduceMotion
         ? withSpring(1, {damping: 11, stiffness: 110, mass: 0.9})
-        : withTiming(step >= 2 ? 1 : 0, {duration: reduceMotion ? 0 : 200});
-  }, [step, launching, reduceMotion, fold, drop]);
+        : withTiming(step >= 1 ? 1 : 0, {duration: reduceMotion ? 0 : 200});
+  }, [step, launching, reduceMotion, voice]);
 
   // The words cross-fade a beat behind the mark.
   React.useEffect(() => {
@@ -392,7 +393,7 @@ function Story() {
         {/* Hidden while the launch screen's copy of the mark flies onto this spot. */}
         <Animated.View style={[markStyle, launching && styles.hidden]}>
           <View ref={heroRef} onLayout={measureHero} collapsable={false}>
-            <AnimatedMark width={heroWidth} fold={fold} drop={drop} />
+            <AnimatedMark width={heroWidth} grow={grow} voice={voice} />
           </View>
         </Animated.View>
 

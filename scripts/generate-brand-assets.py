@@ -1,68 +1,97 @@
 #!/usr/bin/env python3
-"""Generate every Mbari logo asset the app ships, from one geometry.
+"""Generate every Mbarĩ logo asset the app ships, from one geometry.
 
   python3 -m venv .venv-brand && .venv-brand/bin/pip install fonttools uharfbuzz
   brew install librsvg
   .venv-brand/bin/python scripts/generate-brand-assets.py
 
 Writes:
-  src/components/brand/wordmark-data.ts   the "mbari" outlines (Plus Jakarta Sans Bold)
-  android/app/src/main/res/drawable/       splash_mark, ic_launcher_foreground, ic_launcher_monochrome
-  android/app/src/main/res/mipmap-*/       adaptive icon XML and legacy PNG launcher icons
-  android/app/src/main/res/values*/        brand and splash colours
+  src/components/brand/geometry.ts        the mark: a stem and a tilde, in mark units
+  src/components/brand/wordmark-data.ts   "Mbarĩ" outlines (Plus Jakarta Sans Bold) with the mark's tilde
+  src/components/icons/icon-data.ts       the icon set, from scripts/brand/icons.py
+  android/app/src/main/res/drawable/      splash_mark, ic_launcher_foreground, ic_launcher_monochrome
+  android/app/src/main/res/mipmap-*/      adaptive icon XML and legacy PNG launcher icons
+  android/app/src/main/res/values*/       brand and splash colours
 
-The mark: a bookmark ribbon (V-notch on top) folded into an L, holding one
-amber dot. Every measure is a ratio of the stroke T. Keep MARK in sync with
-src/components/brand/geometry.ts.
+The mark is the Kikuyu letter ĩ: a stem of width T, 2.8T tall, and a tilde 2.9T
+wide and 0.7T thick, its centreline 1T above the stem, rising 0.32T. The design
+lives in ~/Documents/mbari/brand (index.html has the reasoning and the rules).
 """
-import os, re, subprocess, tempfile
+import math, os, re, subprocess, sys, tempfile
+
 import uharfbuzz as hb
-from fontTools.ttLib import TTFont
+from fontTools.pens.boundsPen import BoundsPen
 from fontTools.pens.recordingPen import DecomposingRecordingPen
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
-from fontTools.pens.boundsPen import BoundsPen
+from fontTools.ttLib import TTFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "scripts", "brand"))
+import icons as ICONS_SRC  # noqa: E402
+
 RES = f"{ROOT}/android/app/src/main/res"
 FONT = f"{RES}/font/plus_jakarta_sans_bold.ttf"
+BRAND_TS = f"{ROOT}/src/components/brand"
 
-INK, INK_ON_DARK, AMBER = "#1B1712", "#F3EEE6", "#E0962C"
-# The app's own backgrounds (global.css --background), so the splash hands
-# over to the first screen without a change of colour.
-PAPER, NIGHT = "#F9F6F0", "#0A0A0A"
+# Colour. Ink is a deep highland green; clay is Kiambu's red murram earth.
+INK, CLAY, MILLET, NIGHT = "#10281F", "#D9502B", "#F4EDDF", "#0B1A14"
 
-# Mark geometry, in mark units.
-T, N, W, H, R = 92, 40, 272, 304, 62
-DOT = (T + 84, H - T - 84)
-# The ribbon's mass sits left and low; nudge right and up to look centred.
-NUDGE = (5.8, -3.5)
-
-# Android 12 splash: an icon without a background is 288dp, and must fit a
-# 192dp circle. 0.465 keeps the farthest corner inside it.
-SPLASH_SIZE, SPLASH_SCALE = 288, 0.465
-# Adaptive launcher icon: 108dp canvas, 72dp visible. The mark takes about half
-# of what shows, like the brand app icon, so a circular mask never crowds it.
-ICON_SIZE, ICON_SCALE = 108, 0.132
+# ---------- the mark, in units of the stem width T ----------
+T = 80
+STEM_H, GAP, TW, TT, TA = 2.8 * T, 1.0 * T, 2.9 * T, 0.7 * T, 0.32 * T
 
 
-def ribbon_d():
-    return f"M0,0 L{T/2:g},{N} L{T},0 L{T},{H-T} L{W},{H-T} L{W},{H} L0,{H} Z"
+def f(v):
+    return f"{v:.2f}".rstrip("0").rstrip(".")
 
 
-def dot_d():
-    cx, cy = DOT
-    return f"M{cx-R},{cy} a{R},{R} 0 1,0 {2*R},0 a{R},{R} 0 1,0 {-2*R},0 Z"
+def wave_pts(cx, cy, w, amp, t, n=48, ncap=12):
+    """A tilde of constant thickness with round ends, as one polygon (y grows down)."""
+    def c(u): return cx - w / 2 + w * u, cy - amp * math.sin(2 * math.pi * u)
+    def nt(u):
+        dx, dy = w, -amp * 2 * math.pi * math.cos(2 * math.pi * u)
+        L = math.hypot(dx, dy)
+        return -dy / L, dx / L, dx / L, dy / L
+    left, right = [], []
+    for i in range(n + 1):
+        u = i / n; x, y = c(u); nx, ny, _, _ = nt(u)
+        left.append((x - nx * t / 2, y - ny * t / 2)); right.append((x + nx * t / 2, y + ny * t / 2))
+    pts = left[:]
+    x, y = c(1); nx, ny, tx, ty = nt(1)
+    for k in range(1, ncap):
+        a = math.pi * k / ncap
+        pts.append((x + (-nx * math.cos(a) + tx * math.sin(a)) * t / 2, y + (-ny * math.cos(a) + ty * math.sin(a)) * t / 2))
+    pts += right[::-1]
+    x, y = c(0); nx, ny, tx, ty = nt(0)
+    for k in range(1, ncap):
+        a = math.pi * k / ncap
+        pts.append((x + (nx * math.cos(a) - tx * math.sin(a)) * t / 2, y + (ny * math.cos(a) - ty * math.sin(a)) * t / 2))
+    return pts
 
 
-def placement(size, scale):
-    x = (size - W * scale) / 2 + NUDGE[0] * scale
-    y = (size - H * scale) / 2 + NUDGE[1] * scale
-    return round(x, 3), round(y, 3)
+def pts_d(pts, sx=1, sy=1, dx=0, dy=0):
+    return "M" + " L".join(f"{f(dx + x * sx)} {f(dy + y * sy)}" for x, y in pts) + " Z"
 
 
-def vector(size, scale, ink, dot):
-    x, y = placement(size, scale)
+# Mark space with its bounding box's top-left at (0, 0): stem foot on the bottom edge.
+_wave = wave_pts(0, -(STEM_H + GAP), TW, TA, TT)
+X0, Y0 = min(p[0] for p in _wave), min(p[1] for p in _wave)
+MW, MH = max(p[0] for p in _wave) - X0, -Y0
+STEM = (-T / 2 - X0, MH - STEM_H, T, STEM_H)               # x, y, width, height
+TILDE_D = pts_d(_wave, 1, 1, -X0, -Y0)
+SPLASH_SCALE = 0.40  # the splash icon is 288dp and must fit a 192dp circle
+
+
+def write(path, content):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as fh:
+        fh.write(content)
+
+
+def mark_vector(size, scale, ink, clay, dx=0.0, dy=0.0):
+    x = (size - MW * scale) / 2 + dx
+    y = (size - MH * scale) / 2 + dy
     return f'''<?xml version="1.0" encoding="utf-8"?>
 <!-- Generated by scripts/generate-brand-assets.py. Do not edit by hand. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -71,27 +100,55 @@ def vector(size, scale, ink, dot):
     android:viewportWidth="{size}"
     android:viewportHeight="{size}">
     <group
-        android:translateX="{x}"
-        android:translateY="{y}"
+        android:translateX="{x:.3f}"
+        android:translateY="{y:.3f}"
         android:scaleX="{scale}"
         android:scaleY="{scale}">
-        <path android:fillColor="{ink}" android:pathData="{ribbon_d()}" />
-        <path android:fillColor="{dot}" android:pathData="{dot_d()}" />
+        <path android:fillColor="{ink}" android:pathData="M{f(STEM[0])},{f(STEM[1])} h{f(STEM[2])} v{f(STEM[3])} h-{f(STEM[2])} Z" />
+        <path android:fillColor="{clay}" android:pathData="{TILDE_D}" />
     </group>
 </vector>
 '''
 
 
-def write(path, content):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w") as f:
-        f.write(content)
+def ts_geometry():
+    write(f"{BRAND_TS}/geometry.ts", f"""// Generated by scripts/generate-brand-assets.py. Do not edit by hand.
+/**
+ * The Mbarĩ mark: the Kikuyu letter ĩ. A stem, crowned by a tilde.
+ * Every measure is a ratio of the stem width T (see the brand sheet).
+ * Mark units, bounding box top-left at (0, 0).
+ */
+export const MARK = {{
+  /** The stem's width. */
+  T: {T},
+  width: {f(MW)},
+  height: {f(MH)},
+  stem: {{x: {f(STEM[0])}, y: {f(STEM[1])}, width: {f(STEM[2])}, height: {f(STEM[3])}}},
+  /** How far the tilde sits above the mark's box when it is off-stage. */
+  lift: {f(T * 1.6)},
+}} as const;
+
+/** The tilde, as one outlined shape with round ends. */
+export const TILDE_PATH = '{TILDE_D}';
+
+/**
+ * The native splash draws the mark at this scale, centred in the window
+ * (res/drawable/splash_mark.xml). The JS launch screen matches it exactly.
+ */
+export const SPLASH_SCALE = {SPLASH_SCALE};
+
+export const BRAND_COLORS = {{
+  light: {{ink: '{INK}', clay: '{CLAY}', ground: '{MILLET}'}},
+  dark: {{ink: '{MILLET}', clay: '{CLAY}', ground: '{NIGHT}'}},
+}} as const;
+""")
 
 
 def android_resources():
-    write(f"{RES}/drawable/splash_mark.xml", vector(SPLASH_SIZE, SPLASH_SCALE, "@color/splash_mark_ink", "@color/brand_amber"))
-    write(f"{RES}/drawable/ic_launcher_foreground.xml", vector(ICON_SIZE, ICON_SCALE, INK_ON_DARK, AMBER))
-    write(f"{RES}/drawable/ic_launcher_monochrome.xml", vector(ICON_SIZE, ICON_SCALE, "#FFFFFFFF", "#FFFFFFFF"))
+    write(f"{RES}/drawable/splash_mark.xml", mark_vector(288, SPLASH_SCALE, "@color/splash_mark_ink", "@color/brand_clay"))
+    # Adaptive icon: 108dp canvas, mark inside the 66dp safe circle.
+    write(f"{RES}/drawable/ic_launcher_foreground.xml", mark_vector(108, 0.135, MILLET, CLAY, 0, -0.4))
+    write(f"{RES}/drawable/ic_launcher_monochrome.xml", mark_vector(108, 0.135, "#FFFFFFFF", "#FFFFFFFF", 0, -0.4))
     adaptive = '''<?xml version="1.0" encoding="utf-8"?>
 <!-- Generated by scripts/generate-brand-assets.py. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
@@ -106,9 +163,9 @@ def android_resources():
 <!-- Generated by scripts/generate-brand-assets.py. -->
 <resources>
     <color name="brand_ink">{INK}</color>
-    <color name="brand_amber">{AMBER}</color>
+    <color name="brand_clay">{CLAY}</color>
     <color name="ic_launcher_background">{INK}</color>
-    <color name="splash_background">{PAPER}</color>
+    <color name="splash_background">{MILLET}</color>
     <color name="splash_mark_ink">{INK}</color>
 </resources>
 ''')
@@ -116,33 +173,44 @@ def android_resources():
 <!-- Generated by scripts/generate-brand-assets.py. -->
 <resources>
     <color name="splash_background">{NIGHT}</color>
-    <color name="splash_mark_ink">{INK_ON_DARK}</color>
+    <color name="splash_mark_ink">{MILLET}</color>
 </resources>
 ''')
 
-    # Legacy launchers (Android 7.x): a rounded square and a circle.
-    visible = 72 / ICON_SIZE  # the part of the adaptive canvas a launcher shows
-    scale = ICON_SCALE / visible * 1024 / ICON_SIZE
-    for name, shape in (("ic_launcher", '<rect width="1024" height="1024" rx="228" fill="{bg}"/>'),
-                        ("ic_launcher_round", '<circle cx="512" cy="512" r="512" fill="{bg}"/>')):
-        x, y = placement(1024, scale)
-        svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">{shape.format(bg=INK)}'
-               f'<g transform="translate({x} {y}) scale({scale})"><path d="{ribbon_d()}" fill="{INK_ON_DARK}"/>'
-               f'<path d="{dot_d()}" fill="{AMBER}"/></g></svg>')
-        with tempfile.NamedTemporaryFile("w", suffix=".svg", delete=False) as f:
-            f.write(svg)
+    # Legacy launchers (Android 7.x): a rounded square and a circle, mark ~58% of the height.
+    size = 1024
+    s = size * 0.58 / MH
+    x, y = (size - MW * s) / 2, (size - MH * s) / 2 - 8
+    for name, shape in (("ic_launcher", f'<rect width="{size}" height="{size}" rx="228" fill="{INK}"/>'),
+                        ("ic_launcher_round", f'<circle cx="{size // 2}" cy="{size // 2}" r="{size // 2}" fill="{INK}"/>')):
+        svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {size} {size}">{shape}'
+               f'<g transform="translate({x:.2f} {y:.2f}) scale({s:.5f})">'
+               f'<rect x="{f(STEM[0])}" y="{f(STEM[1])}" width="{f(STEM[2])}" height="{f(STEM[3])}" fill="{MILLET}"/>'
+               f'<path d="{TILDE_D}" fill="{CLAY}"/></g></svg>')
+        with tempfile.NamedTemporaryFile("w", suffix=".svg", delete=False) as tmp:
+            tmp.write(svg)
         for density, px in (("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)):
-            subprocess.run(["rsvg-convert", "-w", str(px), "-h", str(px), f.name,
-                            "-o", f"{RES}/mipmap-{density}/{name}.png"], check=True)
-        os.unlink(f.name)
+            os.makedirs(f"{RES}/mipmap-{density}", exist_ok=True)
+            subprocess.run(["rsvg-convert", "-w", str(px), "-h", str(px), tmp.name, "-o", f"{RES}/mipmap-{density}/{name}.png"], check=True)
+        os.unlink(tmp.name)
 
 
-def wordmark(text="mbari", track=-14):
+# ---------- the wordmark: "Mbarĩ" in Plus Jakarta Sans Bold, with the mark's tilde ----------
+def wordmark(text="Mbarĩ", track=-14):
     font = TTFont(FONT)
     gs, order = font.getGlyphSet(), font.getGlyphOrder()
     hbfont = hb.Font(hb.Face(hb.Blob.from_file_path(FONT)))
     buf = hb.Buffer(); buf.add_str(text); buf.guess_segment_properties()
     hb.shape(hbfont, buf, {"kern": True, "liga": False})
+
+    def contours(name):
+        pen = DecomposingRecordingPen(gs); gs[name].draw(pen)
+        out, cur = [], []
+        for op, args in pen.value:
+            cur.append((op, args))
+            if op in ("closePath", "endPath"):
+                out.append(cur); cur = []
+        return out
 
     def bounds(ops):
         bp = BoundsPen(gs)
@@ -150,47 +218,56 @@ def wordmark(text="mbari", track=-14):
             getattr(bp, op)(*args)
         return bp.bounds
 
-    x, paths, dot, top, bottom = 0, [], None, 0, 0
+    x, paths, wave, xs = 0, [], None, []
     for info, pos in zip(buf.glyph_infos, buf.glyph_positions):
-        name = order[info.codepoint]
-        pen = DecomposingRecordingPen(gs); gs[name].draw(pen)
-        contours, cur = [], []
-        for op, args in pen.value:
-            cur.append((op, args))
-            if op in ("closePath", "endPath"):
-                contours.append(cur); cur = []
-        b = bounds(pen.value)
-        top, bottom = max(top, b[3]), min(bottom, b[1])
-        if name == "i":
-            # The tittle becomes the mark's amber dot.
-            contours.sort(key=lambda c: -bounds(c)[3])
-            tittle, contours = contours[0], contours[1:]
-            x0, y0, x1, y1 = bounds(tittle)
-            dot = (x + (x0 + x1) / 2, -(y0 + y1) / 2, max(x1 - x0, y1 - y0) / 2 * 1.08)
-        sp = SVGPathPen(gs)
-        tp = TransformPen(sp, (1, 0, 0, -1, x + pos.x_offset, 0))
-        for c in contours:
+        name = order[info.codepoint]; cs = contours(name)
+        if name == "itilde":
+            cs.sort(key=lambda c: -bounds(c)[3])
+            cs = cs[1:]                                  # the font's tilde comes off ...
+            sx0, _, sx1, sy1 = bounds(cs[0]); k = (sx1 - sx0) / T
+            cx = x + pos.x_offset + (sx0 + sx1) / 2      # ... the mark's goes on, at the mark's ratios
+            wave = wave_pts(0, 0, TW, TA, TT)
+            wave_d = pts_d(wave, k, k, cx, -(sy1 + GAP * k))
+        sp = SVGPathPen(gs); tp = TransformPen(sp, (1, 0, 0, -1, x + pos.x_offset, 0))
+        for c in cs:
             for op, args in c:
                 getattr(tp, op)(*args)
         paths.append(sp.getCommands())
+        for c in cs:
+            b = bounds(c); xs.append((x + pos.x_offset + b[0], x + pos.x_offset + b[2]))
         x += pos.x_advance + track
     d = re.sub(r"-?\d+\.\d+", lambda m: f"{round(float(m.group())):d}", " ".join(paths))
-    write(f"{ROOT}/src/components/brand/wordmark-data.ts", f'''// Generated by scripts/generate-brand-assets.py. Do not edit by hand.
-// "mbari" in Plus Jakarta Sans Bold, kerned, tracking {track}/1000.
-// Font units, baseline at y = 0 (negative is above it).
+    wave_x = [float(v) for v in re.findall(r"[ML]([\d.\-]+) ", wave_d)]
+    wave_y = [float(v) for v in re.findall(r"[ML][\d.\-]+ ([\d.\-]+)", wave_d)]
+    left = min(min(a for a, _ in xs), min(wave_x)); right = max(max(b for _, b in xs), max(wave_x))
+    top = -min(wave_y)                                   # the tilde is the tallest thing
+    cap = 745                                            # height of the capital M in Plus Jakarta Sans Bold
+    write(f"{BRAND_TS}/wordmark-data.ts", f"""// Generated by scripts/generate-brand-assets.py. Do not edit by hand.
+// "{text}" in Plus Jakarta Sans Bold, kerned, tracking {track}/1000, with the mark's tilde.
+// Font units, baseline at y = 0 (negative is above it). The tilde is separate so it can take the accent.
 
 export const WORDMARK = {{
-  advance: {round(x - track)},
-  ascender: {top},
-  descender: {-bottom},
-  /** The tittle of the i, drawn as the mark's amber dot. */
-  dot: {{cx: {dot[0]:.1f}, cy: {dot[1]:.1f}, r: {dot[2]:.1f}}},
+  /** Left and right ink edges, and the tilde's top, above the baseline. */
+  left: {round(left)},
+  right: {round(right)},
+  top: {round(top)},
+  /** Height of the capital M and b: what `size` means. */
+  cap: {cap},
+  /** The a and b dip a hair below the baseline. */
+  descender: 12,
   d: '{d}',
+  tilde: '{wave_d}',
 }} as const;
-''')
+""")
+
+
+def icon_data():
+    write(f"{ROOT}/src/components/icons/icon-data.ts", ICONS_SRC.to_ts())
 
 
 if __name__ == "__main__":
+    ts_geometry()
     android_resources()
     wordmark()
-    print("brand assets written")
+    icon_data()
+    print("brand assets written; mark", round(MW, 1), "x", round(MH, 1))

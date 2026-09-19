@@ -92,7 +92,7 @@ export function TodayScreen() {
               canGoBack={Boolean(previous)}
               onBack={back}
               onRefresh={deck.reload}
-              onReviewSenders={() => setTab('Sources')}
+              onReviewSenders={() => setTab('Community')}
             />
           )}
         </View>

@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-export const TABS = ['Today', 'Archive', 'Sources', 'Settings'] as const;
+export const TABS = ['Alerts', 'Community', 'Replies', 'Me'] as const;
 export type Tab = (typeof TABS)[number];
 
 /** Full-screen pages pushed over a tab; they hide the tab bar. */
@@ -43,7 +43,7 @@ const NavigationContext = React.createContext<NavigationContextValue | null>(
  * auth) are needed; screens only depend on this hook so the change is local.
  */
 export function NavigationProvider({children}: {children: React.ReactNode}) {
-  const [tab, setTabState] = React.useState<Tab>('Today');
+  const [tab, setTabState] = React.useState<Tab>('Alerts');
   const [detail, setDetail] = React.useState<Detail | null>(null);
   const [detailQuery, setDetailQuery] = React.useState('');
 

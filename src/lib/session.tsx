@@ -6,7 +6,6 @@ import {GOOGLE_WEB_CLIENT_ID} from '@/api/config';
 import {forgetGoogleAccount, getGoogleIdToken} from '@/lib/google-sign-in';
 import {clearShelf} from '@/lib/offline-store';
 import {unregisterFromPush} from '@/lib/push';
-import {migrateLegacyKeys} from '@/lib/storage-migration';
 
 type SessionStatus = 'loading' | 'signedOut' | 'signedIn';
 
@@ -33,7 +32,6 @@ export function SessionProvider({children}: {children: React.ReactNode}) {
   const [account, setAccount] = React.useState<Account | null>(null);
 
   const load = React.useCallback(async () => {
-    await migrateLegacyKeys();
     const token = await api.getToken();
     if (!token) {
       setAccount(null);
