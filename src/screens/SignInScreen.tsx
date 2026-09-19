@@ -1,11 +1,11 @@
 import * as React from 'react';
 import {Pressable, StatusBar, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import {Info, Phone} from 'lucide-react-native';
 
 import {ApiError} from '@/api';
 import {GoogleButton} from '@/components/auth/GoogleButton';
 import {Mark} from '@/components/brand/Mark';
-import {Icon} from '@/components/icons/Icon';
 import {Text} from '@/components/ui/text';
 import {useAppearance} from '@/lib/appearance';
 import {GoogleSignInError} from '@/lib/google-sign-in';
@@ -63,9 +63,9 @@ export function SignInScreen() {
 
       <View className="flex-1 justify-center px-7 pb-6">
         <View className="items-center">
-          <Mark width={68} />
+          <Mark width={64} />
         </View>
-        <Text className="mt-12 text-[34px] font-bold leading-[39px] tracking-tight">
+        <Text className="mt-10 font-serif text-[36px] font-medium leading-[40px] tracking-tight">
           News your family can trust, in your own language.
         </Text>
         <Text className="mt-5 text-[17px] leading-[26px] text-muted-foreground">
@@ -85,15 +85,15 @@ export function SignInScreen() {
           // Phone sign-in arrives with the backend; until then this goes straight in.
           onPress={() => run('phone', () => session.signIn('', ''))}
           className={cn(
-            'h-14 flex-row items-center justify-center gap-3 rounded-xl border-[1.5px] border-foreground active:opacity-70',
+            'h-14 flex-row items-center justify-center gap-3 rounded-full border-[1.5px] border-foreground active:opacity-70',
             busy !== null && 'opacity-70',
           )}>
-          <Icon name="phone" size={20} strokeWidth={2.1} />
+          <Phone size={20} color={colors.foreground} strokeWidth={2} />
           <Text className="text-[17px] font-semibold">Use my phone number</Text>
         </Pressable>
         {error ? <Text className="text-center text-[15px] text-destructive">{error}</Text> : null}
         <View className="flex-row items-start gap-2 px-1 pt-2">
-          <Icon name="info" size={16} color={colors.mutedForeground} />
+          <Info size={16} color={colors.mutedForeground} strokeWidth={2} />
           <Text className="flex-1 text-[13px] leading-[18px] text-muted-foreground">
             Nothing is ever sent to anyone without a person approving it.
           </Text>

@@ -47,7 +47,7 @@ export function GoogleButton({onPress, busy = false, disabled = false}: Props) {
       accessibilityState={{busy, disabled: disabled || busy}}
       disabled={disabled || busy}
       onPress={onPress}
-      className={cn('h-14 flex-row items-center justify-center gap-3 rounded-xl bg-foreground active:opacity-85', disabled && 'opacity-70')}>
+      className={cn('h-14 flex-row items-center justify-center gap-3 rounded-full bg-foreground active:opacity-85', disabled && 'opacity-70')}>
       {busy ? (
         <ActivityIndicator color="white" />
       ) : (
