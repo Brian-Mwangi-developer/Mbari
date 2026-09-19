@@ -1,10 +1,9 @@
 import * as React from 'react';
 import {Pressable} from 'react-native';
 
-import {Icon} from '@/components/icons/Icon';
+import {Check, Plus, X} from 'lucide-react-native';
 import {Text} from '@/components/ui/text';
-import {useAppearance} from '@/lib/appearance';
-import {THEME} from '@/lib/theme';
+import {useTheme} from '@/lib/theme';
 import {cn} from '@/lib/utils';
 
 type Props = {
@@ -20,9 +19,8 @@ type Props = {
  * tinted fills; the state is the fill and the icon.
  */
 export function TopicChip({label, selected, onPress, mode = 'toggle'}: Props) {
-  const {resolved} = useAppearance();
-  const colors = THEME[resolved];
-  const name = selected ? (mode === 'remove' ? 'close' : 'check') : 'plus';
+  const colors = useTheme();
+  const Glyph = selected ? (mode === 'remove' ? X : Check) : Plus;
   return (
     <Pressable
       accessibilityRole={mode === 'remove' ? 'button' : 'checkbox'}
@@ -30,10 +28,10 @@ export function TopicChip({label, selected, onPress, mode = 'toggle'}: Props) {
       accessibilityState={mode === 'remove' ? undefined : {checked: selected}}
       onPress={onPress}
       className={cn(
-        'flex-row items-center gap-2 rounded-lg border px-4 py-3 active:opacity-70',
+        'flex-row items-center gap-2 rounded-full border px-4 py-3 active:opacity-70',
         selected ? 'border-foreground bg-foreground' : 'border-foreground/30 bg-transparent',
       )}>
-      <Icon name={name} size={16} strokeWidth={2.4} color={selected ? colors.background : colors.mutedForeground} />
+      <Glyph size={16} strokeWidth={2.4} color={selected ? colors.background : colors.mutedForeground} />
       <Text className={cn('text-[15px] font-semibold', selected ? 'text-background' : 'text-foreground')}>{label}</Text>
     </Pressable>
   );
