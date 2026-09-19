@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import * as api from '@/api';
 import type {Account} from '@/api';
-import {GOOGLE_WEB_CLIENT_ID} from '@/api/config';
+import {BACKEND_ENABLED, GOOGLE_WEB_CLIENT_ID} from '@/api/config';
 import {forgetGoogleAccount, getGoogleIdToken} from '@/lib/google-sign-in';
 import {clearShelf} from '@/lib/offline-store';
 import {unregisterFromPush} from '@/lib/push';
@@ -23,6 +23,20 @@ type SessionContextValue = {
 
 const SessionContext = React.createContext<SessionContextValue | null>(null);
 
+/** The stand-in account used while there is no backend (see BACKEND_ENABLED). */
+function localAccount(name: string, email: string): Account {
+  return {
+    id: 'local',
+    name: name || 'You',
+    email,
+    image: null,
+    onboardingDone: true,
+    timezone: 'Africa/Nairobi',
+    interests: [],
+    unreadExpiryDays: 14,
+  };
+}
+
 /**
  * Who is signed in. On mount it tries the stored bearer token; a 401 means the
  * token is stale, so it is dropped and the app shows sign-in.
@@ -32,6 +46,11 @@ export function SessionProvider({children}: {children: React.ReactNode}) {
   const [account, setAccount] = React.useState<Account | null>(null);
 
   const load = React.useCallback(async () => {
+    if (!BACKEND_ENABLED) {
+      setAccount(null);
+      setStatus('signedOut');
+      return;
+    }
     const token = await api.getToken();
     if (!token) {
       setAccount(null);
@@ -66,22 +85,42 @@ export function SessionProvider({children}: {children: React.ReactNode}) {
       status,
       account,
       signIn: async (email, password) => {
+        if (!BACKEND_ENABLED) {
+          setAccount(localAccount('', email));
+          setStatus('signedIn');
+          return;
+        }
         await api.signIn(email, password);
         setAccount(await api.getAccount());
         setStatus('signedIn');
       },
       signUp: async (email, password, name) => {
+        if (!BACKEND_ENABLED) {
+          setAccount(localAccount(name, email));
+          setStatus('signedIn');
+          return;
+        }
         await api.signUp(email, password, name);
         setAccount(await api.getAccount());
         setStatus('signedIn');
       },
       signInWithGoogle: async () => {
+        if (!BACKEND_ENABLED) {
+          setAccount(localAccount('', ''));
+          setStatus('signedIn');
+          return;
+        }
         const {idToken, nonce} = await getGoogleIdToken(GOOGLE_WEB_CLIENT_ID);
         await api.signInWithGoogle(idToken, nonce);
         setAccount(await api.getAccount());
         setStatus('signedIn');
       },
       signOut: async () => {
+        if (!BACKEND_ENABLED) {
+          setAccount(null);
+          setStatus('signedOut');
+          return;
+        }
         if (account) {
           await clearShelf(account.id);
         }
@@ -94,6 +133,9 @@ export function SessionProvider({children}: {children: React.ReactNode}) {
         setStatus('signedOut');
       },
       refresh: async () => {
+        if (!BACKEND_ENABLED) {
+          return;
+        }
         try {
           setAccount(await api.getAccount());
         } catch {

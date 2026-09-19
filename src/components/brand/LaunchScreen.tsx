@@ -8,7 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import {AnimatedMark} from '@/components/brand/Mark';
+import {Mark} from '@/components/brand/Mark';
 import {BRAND_COLORS, MARK, SPLASH_SCALE} from '@/components/brand/geometry';
 import NativeLaunchScreen from '@/native/NativeLaunchScreen';
 import {useAppearance} from '@/lib/appearance';
@@ -30,9 +30,8 @@ type Exit = 'fade' | 'handoff';
 /**
  * The first thing JavaScript draws: the same mark, in the same place and
  * colours, as the native splash, which it then releases. Once the session is
- * known it either fades into the app, or, for someone signed out, lifts the
- * tilde off the stem and flies the stem to the landing screen, which stands
- * it up and lays the tilde over it again.
+ * known it either fades into the app or, for someone signed out, flies the
+ * mark to the spot where the landing screen draws its own.
  */
 export function LaunchScreen() {
   const {status} = useSession();
@@ -50,8 +49,6 @@ export function LaunchScreen() {
   const ground = useSharedValue(1);
   const markOpacity = useSharedValue(1);
   const fly = useSharedValue(0);
-  const grow = useSharedValue(1);
-  const voice = useSharedValue(1);
 
   React.useEffect(() => {
     const timers = [
@@ -98,13 +95,12 @@ export function LaunchScreen() {
       timers.push(setTimeout(finish, FADE_MS + 80));
     } else {
       const easing = Easing.inOut(Easing.cubic);
-      voice.value = withTiming(0, {duration: FLY_MS * 0.45, easing});
       fly.value = withTiming(1, {duration: FLY_MS, easing});
       timers.push(setTimeout(() => (ground.value = withTiming(0, {duration: FADE_MS})), FLY_MS));
       timers.push(setTimeout(finish, FLY_MS + FADE_MS));
     }
     return () => timers.forEach(clearTimeout);
-  }, [exit, finish, fly, voice, ground, markOpacity]);
+  }, [exit, finish, fly, ground, markOpacity]);
 
   const markWidth = MARK.width * SPLASH_SCALE;
   const markHeight = MARK.height * SPLASH_SCALE;
@@ -140,7 +136,7 @@ export function LaunchScreen() {
       {/* Centred by layout, so it is drawn in the very first frame, exactly where the native splash has it. */}
       <View style={styles.centre} pointerEvents="none">
         <Animated.View style={[{width: markWidth, height: markHeight}, markStyle]}>
-          <AnimatedMark width={markWidth} grow={grow} voice={voice} />
+          <Mark width={markWidth} />
         </Animated.View>
         {slow && !exit ? <ActivityIndicator style={styles.spinner} color={colors.ink} /> : null}
       </View>

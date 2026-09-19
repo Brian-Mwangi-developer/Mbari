@@ -23,3 +23,11 @@ export const GOOGLE_WEB_CLIENT_ID = '131242635298-7b5i9rsqubq49kbtomhb8uki45817n
  * (see mbari-backend/src/lib/auth.ts).
  */
 export const NATIVE_APP_ORIGIN = 'mbari://app';
+
+/**
+ * Whether the app talks to the backend. While it is off (no server yet),
+ * sign-in, sign-up and Google sign-in skip the network and go straight to the
+ * Alerts home with a local account, and nothing is remembered between launches.
+ * Turn this on once api.mbari.com exists.
+ */
+export const BACKEND_ENABLED = false;

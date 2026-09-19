@@ -1,32 +1,19 @@
 import * as React from 'react';
 import {
-  AccessibilityInfo,
   ActivityIndicator,
   BackHandler,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
   View,
-  useWindowDimensions,
 } from 'react-native';
-import {Gesture, GestureDetector} from 'react-native-gesture-handler';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 import {ApiError} from '@/api';
 import {GoogleButton} from '@/components/auth/GoogleButton';
-import {AnimatedMark, Mark} from '@/components/brand/Mark';
-import {Wordmark} from '@/components/brand/Wordmark';
+import {Mark} from '@/components/brand/Mark';
 import {Icon} from '@/components/icons/Icon';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
@@ -35,36 +22,8 @@ import {useAppearance} from '@/lib/appearance';
 import {GoogleSignInError} from '@/lib/google-sign-in';
 import {useLaunch} from '@/lib/launch';
 import {useSession} from '@/lib/session';
-import {cn} from '@/lib/utils';
 
 type Mode = 'signIn' | 'signUp';
-
-/**
- * What Mbarĩ does, in three lines. The mark builds itself up alongside, but
- * nothing here explains the mark: people need to know what the app is for.
- */
-const STORY = [
-  {
-    part: 'Watch',
-    title: 'We watch the sites for you.',
-    body: 'Mbarĩ keeps an eye on county and government websites, and tells you as soon as something changes.',
-  },
-  {
-    part: 'In your language',
-    title: 'Said the way your family says it.',
-    body: 'Each notice becomes a short summary with its source, and a voice message in Gĩkũyũ.',
-  },
-  {
-    part: 'You decide',
-    title: 'Nothing goes out until you approve.',
-    body: 'Then Mbarĩ phones the people you choose, and they can answer back by voice.',
-  },
-] as const;
-
-const LAST = STORY.length - 1;
-/** How long each part of the story holds before the next, when it plays itself. */
-const HOLD_MS = [2_000, 3_000];
-
 
 /** What to tell the user when Google sign-in doesn't complete; null says nothing. */
 function googleErrorMessage(error: unknown): string | null {
@@ -158,11 +117,15 @@ export function SignInScreen() {
       <SafeAreaView className="flex-1 bg-background">
         {/* Signed out, AppShell isn't mounted to set this. */}
         {statusBar}
-        <View className="items-center pt-5">
-          <Wordmark size={20} />
+        <View className="flex-1 px-6 pt-10">
+          <HeroMark />
+          <Text className="mt-8 text-[34px] font-bold leading-[38px] tracking-tight">
+            News your family can trust, in your own language.
+          </Text>
+          <Text className="mt-4 text-[17px] leading-[26px] text-muted-foreground">
+            Mbarĩ watches county and government sites for you. You choose what matters, and pass it on by voice.
+          </Text>
         </View>
-
-        <Story />
 
         <View className="gap-3 px-6 pb-4">
           <GoogleButton onPress={continueWithGoogle} busy={busy === 'google'} disabled={busy !== null} />
@@ -179,6 +142,12 @@ export function SignInScreen() {
             <Text className="text-[17px] font-medium">Continue with Email</Text>
           </Button>
           {error ? <Text className="text-center text-[15px] text-destructive">{error}</Text> : null}
+          <View className="flex-row items-start gap-2 px-1 pt-1">
+            <Icon name="info" size={16} color="#56655C" />
+            <Text className="flex-1 text-[13px] leading-[18px] text-muted-foreground">
+              Nothing is ever sent to anyone without a person approving it.
+            </Text>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -275,149 +244,28 @@ export function SignInScreen() {
 }
 
 /**
- * The landing's centre: the mark builds itself up while three short lines say
- * what the app does. It plays once on its own; a tap on the steps or a
- * swipe takes over. With a screen reader on it waits to be stepped through.
+ * The mark at the top of the landing. While the launch screen is up it stays
+ * hidden and reports where it sits, so the launch screen's copy can fly onto
+ * exactly this spot.
  */
-function Story() {
+function HeroMark() {
   const {launching, setHero} = useLaunch();
-  const reduceMotion = useReducedMotion();
-  const {width: screenWidth} = useWindowDimensions();
-  const heroWidth = Math.round(Math.min(120, Math.max(84, screenWidth * 0.27)));
-
-  const [step, setStep] = React.useState(0);
-  const [shown, setShown] = React.useState(0);
-  const [autoplay, setAutoplay] = React.useState(true);
-  const heroRef = React.useRef<React.ComponentRef<typeof View>>(null);
-
-  // Arriving from the launch screen the stem is already standing, tilde lifted away.
-  const grow = useSharedValue(launching ? 1 : 0);
-  const voice = useSharedValue(0);
-  // Arriving from the launch screen the mark is already in place; otherwise it rises in.
-  const rise = useSharedValue(launching ? 1 : 0);
-  const caption = useSharedValue(launching ? 0 : 1);
-
-  React.useEffect(() => {
-    AccessibilityInfo.isScreenReaderEnabled()
-      .then(on => on && setAutoplay(false))
-      .catch(() => {});
-  }, []);
+  const ref = React.useRef<React.ComponentRef<typeof View>>(null);
 
   React.useEffect(() => () => setHero(null), [setHero]);
 
-  const measureHero = () => {
-    heroRef.current?.measureInWindow((x, y, width, height) => {
+  const measure = () => {
+    ref.current?.measureInWindow((x, y, width, height) => {
       if (width > 0) {
         setHero({x, y, width, height});
       }
     });
   };
 
-  // Once the launch screen has handed over (or straight away after signing out).
-  React.useEffect(() => {
-    if (launching) {
-      return;
-    }
-    rise.value = withTiming(1, {duration: reduceMotion ? 0 : 520, easing: Easing.out(Easing.cubic)});
-    grow.value = withTiming(1, {duration: reduceMotion ? 0 : 520, easing: Easing.out(Easing.cubic)});
-    caption.value = withTiming(1, {duration: reduceMotion ? 0 : 420});
-  }, [launching, reduceMotion, rise, grow, caption]);
-
-  // The mark follows the story: the tilde arrives on the second line.
-  React.useEffect(() => {
-    if (launching) {
-      return;
-    }
-    voice.value =
-      step >= 1 && !reduceMotion
-        ? withSpring(1, {damping: 11, stiffness: 110, mass: 0.9})
-        : withTiming(step >= 1 ? 1 : 0, {duration: reduceMotion ? 0 : 200});
-  }, [step, launching, reduceMotion, voice]);
-
-  // The words cross-fade a beat behind the mark.
-  React.useEffect(() => {
-    if (step === shown) {
-      return;
-    }
-    caption.value = withTiming(0, {duration: reduceMotion ? 0 : 140});
-    const timer = setTimeout(() => {
-      setShown(step);
-      caption.value = withTiming(1, {duration: reduceMotion ? 0 : 360});
-    }, reduceMotion ? 0 : 160);
-    return () => clearTimeout(timer);
-  }, [step, shown, reduceMotion, caption]);
-
-  React.useEffect(() => {
-    if (launching || !autoplay || step >= LAST) {
-      return;
-    }
-    const timer = setTimeout(() => setStep(current => Math.min(LAST, current + 1)), HOLD_MS[step]);
-    return () => clearTimeout(timer);
-  }, [launching, autoplay, step]);
-
-  const choose = React.useCallback((next: number) => {
-    setAutoplay(false);
-    setStep(Math.max(0, Math.min(LAST, next)));
-  }, []);
-
-  const swipe = React.useMemo(
-    () =>
-      Gesture.Pan()
-        .runOnJS(true)
-        .activeOffsetX([-18, 18])
-        .failOffsetY([-24, 24])
-        .onEnd(event => {
-          if (event.translationX < -40) {
-            choose(step + 1);
-          } else if (event.translationX > 40) {
-            choose(step - 1);
-          }
-        }),
-    [choose, step],
-  );
-
-  const markStyle = useAnimatedStyle(() => ({
-    opacity: rise.value,
-    transform: [{translateY: (1 - rise.value) * 18}],
-  }));
-  const captionStyle = useAnimatedStyle(() => ({
-    opacity: caption.value,
-    transform: [{translateY: (1 - caption.value) * 6}],
-  }));
-
-  const line = STORY[shown];
-
   return (
-    <GestureDetector gesture={swipe}>
-      <View className="flex-1 items-center justify-center px-8">
-        {/* Hidden while the launch screen's copy of the mark flies onto this spot. */}
-        <Animated.View style={[markStyle, launching && styles.hidden]}>
-          <View ref={heroRef} onLayout={measureHero} collapsable={false}>
-            <AnimatedMark width={heroWidth} grow={grow} voice={voice} />
-          </View>
-        </Animated.View>
-
-        <Animated.View style={captionStyle} className="mt-12 min-h-[150px] w-full max-w-[340px] items-center">
-          <Text className="text-[12px] font-semibold uppercase tracking-[1.8px] text-primary">{line.part}</Text>
-          <Text className="mt-2.5 text-center font-serif text-[29px] leading-[35px]">{line.title}</Text>
-          <Text className="mt-3 text-center text-[16px] leading-[24px] text-muted-foreground">{line.body}</Text>
-        </Animated.View>
-
-        <View className="mt-3 flex-row items-center gap-2.5" accessibilityRole="tablist">
-          {STORY.map((part, index) => (
-            <Pressable
-              key={part.part}
-              accessibilityRole="tab"
-              accessibilityState={{selected: index === step}}
-              accessibilityLabel={`${index + 1} of ${STORY.length}: ${part.part}`}
-              hitSlop={12}
-              onPress={() => choose(index)}>
-              <View className={cn('h-1.5 rounded-full', index === step ? 'w-6 bg-primary' : 'w-1.5 bg-foreground/20')} />
-            </Pressable>
-          ))}
-        </View>
-      </View>
-    </GestureDetector>
+    <View ref={ref} onLayout={measure} collapsable={false} style={launching ? styles.hidden : undefined}>
+      <Mark width={76} />
+    </View>
   );
 }
 
