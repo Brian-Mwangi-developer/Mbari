@@ -53,13 +53,11 @@ module.exports = {
       borderWidth: {
         hairline: hairlineWidth(),
       },
-      // Hard where facts are: small corners, like the stem. Only the play
-      // button and the tilde are round.
       borderRadius: {
-        xl: 'calc(var(--radius) + 4px)',
+        xl: 'calc(var(--radius) + 8px)',
         lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        md: 'calc(var(--radius) - 4px)',
+        sm: 'calc(var(--radius) - 8px)',
       },
     },
   },

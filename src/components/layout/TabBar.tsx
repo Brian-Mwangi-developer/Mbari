@@ -16,19 +16,14 @@ const ICONS: Record<Tab, IconName> = {
   Me: 'me',
 };
 
-/**
- * The bottom bar: an icon and a word per tab, a heavy ink rule above, and the
- * small clay tilde under the tab you are on. It is the app's only ornament.
- */
+/** The bottom bar: the active tab takes the accent, with a small tilde under it. */
 export function TabBar() {
   const {tab: active, setTab} = useNavigation();
   const {resolved} = useAppearance();
   const colors = THEME[resolved];
 
   return (
-    <View
-      accessibilityRole="tablist"
-      className="flex-row justify-between border-t-[1.5px] border-foreground bg-background px-5 pb-2 pt-3">
+    <View accessibilityRole="tablist" className="flex-row border-t border-border bg-background pb-2 pt-3">
       {TABS.map(tab => {
         const isActive = tab === active;
         return (
@@ -37,14 +32,17 @@ export function TabBar() {
             accessibilityRole="tab"
             accessibilityState={{selected: isActive}}
             onPress={() => setTab(tab)}
-            className="min-w-[64px] items-center gap-1 pb-3.5 active:opacity-70">
-            <Icon name={ICONS[tab]} size={24} color={isActive ? colors.foreground : colors.mutedForeground} />
-            <Text className={cn('text-[11.5px] font-semibold', isActive ? 'text-foreground' : 'text-muted-foreground')}>
-              {tab}
-            </Text>
+            className="flex-1 items-center gap-1.5 pb-3 pt-2 active:opacity-70">
+            <Icon
+              name={ICONS[tab]}
+              size={24}
+              strokeWidth={isActive ? 2.2 : 1.9}
+              color={isActive ? colors.primary : colors.mutedForeground}
+            />
+            <Text className={cn('text-[13px] font-medium', isActive ? 'text-primary' : 'text-muted-foreground')}>{tab}</Text>
             {isActive ? (
               <View className="absolute bottom-0">
-                <TildeMarker />
+                <TildeMarker width={22} />
               </View>
             ) : null}
           </Pressable>

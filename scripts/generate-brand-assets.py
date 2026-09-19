@@ -34,8 +34,10 @@ RES = f"{ROOT}/android/app/src/main/res"
 FONT = f"{RES}/font/plus_jakarta_sans_bold.ttf"
 BRAND_TS = f"{ROOT}/src/components/brand"
 
-# Colour. Ink is a deep highland green; clay is Kiambu's red murram earth.
-INK, CLAY, MILLET, NIGHT = "#10281F", "#D9502B", "#F4EDDF", "#0B1A14"
+# Colour. Ink is the app's warm near-black; clay is red murram earth. Green
+# appears only as the dark-mode ground (NIGHT). PAPER matches the app background
+# so the splash hands over without a change of colour.
+INK, CLAY, MILLET, NIGHT, PAPER = "#161412", "#D9502B", "#F6F3EE", "#0B1A14", "#F9F6F0"
 
 # ---------- the mark, in units of the stem width T ----------
 T = 80
@@ -138,7 +140,7 @@ export const TILDE_PATH = '{TILDE_D}';
 export const SPLASH_SCALE = {SPLASH_SCALE};
 
 export const BRAND_COLORS = {{
-  light: {{ink: '{INK}', clay: '{CLAY}', ground: '{MILLET}'}},
+  light: {{ink: '{INK}', clay: '{CLAY}', ground: '{PAPER}'}},
   dark: {{ink: '{MILLET}', clay: '{CLAY}', ground: '{NIGHT}'}},
 }} as const;
 """)
@@ -165,7 +167,7 @@ def android_resources():
     <color name="brand_ink">{INK}</color>
     <color name="brand_clay">{CLAY}</color>
     <color name="ic_launcher_background">{INK}</color>
-    <color name="splash_background">{MILLET}</color>
+    <color name="splash_background">{PAPER}</color>
     <color name="splash_mark_ink">{INK}</color>
 </resources>
 ''')

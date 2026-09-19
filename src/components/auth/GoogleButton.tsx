@@ -1,19 +1,9 @@
 import * as React from 'react';
-import {ActivityIndicator, Pressable, StyleSheet, Text, View} from 'react-native';
+import {ActivityIndicator, Pressable, StyleSheet, View} from 'react-native';
 import Svg, {Path} from 'react-native-svg';
 
-import {useAppearance} from '@/lib/appearance';
-
-/**
- * "Continue with Google", per Google's sign-in branding guidelines: the
- * standard four-colour G, never recoloured or resized relative to the text,
- * on Google's light or dark button colours.
- * https://developers.google.com/identity/branding-guidelines
- */
-const COLORS = {
-  light: {fill: '#FFFFFF', stroke: '#747775', text: '#1F1F1F'},
-  dark: {fill: '#131314', stroke: '#8E918F', text: '#E3E3E3'},
-} as const;
+import {Text} from '@/components/ui/text';
+import {cn} from '@/lib/utils';
 
 export function GoogleLogo({size = 20}: {size?: number}) {
   return (
@@ -44,12 +34,12 @@ type Props = {
   disabled?: boolean;
 };
 
+/**
+ * "Continue with Google" as the landing's primary action: a solid ink button in
+ * the app's own type, with Google's full-colour G on a white disc as Google's
+ * guidelines allow.
+ */
 export function GoogleButton({onPress, busy = false, disabled = false}: Props) {
-  const {resolved} = useAppearance();
-  const colors = COLORS[resolved];
-  // NativeWind's Pressable drops function-valued `style`, so track pressed here.
-  const [pressed, setPressed] = React.useState(false);
-
   return (
     <Pressable
       accessibilityRole="button"
@@ -57,36 +47,21 @@ export function GoogleButton({onPress, busy = false, disabled = false}: Props) {
       accessibilityState={{busy, disabled: disabled || busy}}
       disabled={disabled || busy}
       onPress={onPress}
-      onPressIn={() => setPressed(true)}
-      onPressOut={() => setPressed(false)}
-      style={[
-        styles.button,
-        {backgroundColor: colors.fill, borderColor: colors.stroke},
-        (pressed || disabled) && styles.dimmed,
-      ]}>
+      className={cn('h-14 flex-row items-center justify-center gap-3 rounded-xl bg-foreground active:opacity-85', disabled && 'opacity-70')}>
       {busy ? (
-        <ActivityIndicator color={colors.text} />
+        <ActivityIndicator color="white" />
       ) : (
-        <View style={styles.content}>
-          <GoogleLogo />
-          <Text style={[styles.label, {color: colors.text}]}>Continue with Google</Text>
-        </View>
+        <>
+          <View style={styles.disc}>
+            <GoogleLogo size={16} />
+          </View>
+          <Text className="text-[17px] font-semibold text-background">Continue with Google</Text>
+        </>
       )}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
-    height: 56,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-  },
-  content: {flexDirection: 'row', alignItems: 'center', gap: 10},
-  // Google Sans is not available to apps; Android's system sans at medium weight is the closest.
-  label: {fontFamily: 'sans-serif-medium', fontSize: 17, letterSpacing: 0.1},
-  dimmed: {opacity: 0.7},
+  disc: {width: 26, height: 26, borderRadius: 13, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center'},
 });
