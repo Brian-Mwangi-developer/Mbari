@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-export const TABS = ['Alerts', 'Community', 'Replies', 'Me'] as const;
+export const TABS = ['Home', 'Community', 'Inbox', 'Settings'] as const;
 export type Tab = (typeof TABS)[number];
 
 /** Full-screen pages pushed over a tab; they hide the tab bar. */
@@ -32,6 +32,10 @@ type NavigationContextValue = {
   detailQuery: string;
   openDetail: (detail: Detail, options?: DetailOptions) => void;
   closeDetail: () => void;
+  /** The alert being prepared for sending, shown over the tabs. */
+  sendingId: string | null;
+  openSend: (alertId: string) => void;
+  closeSend: () => void;
 };
 
 const NavigationContext = React.createContext<NavigationContextValue | null>(
@@ -43,9 +47,10 @@ const NavigationContext = React.createContext<NavigationContextValue | null>(
  * auth) are needed; screens only depend on this hook so the change is local.
  */
 export function NavigationProvider({children}: {children: React.ReactNode}) {
-  const [tab, setTabState] = React.useState<Tab>('Alerts');
+  const [tab, setTabState] = React.useState<Tab>('Home');
   const [detail, setDetail] = React.useState<Detail | null>(null);
   const [detailQuery, setDetailQuery] = React.useState('');
+  const [sendingId, setSendingId] = React.useState<string | null>(null);
 
   const value = React.useMemo<NavigationContextValue>(
     () => ({
@@ -53,6 +58,7 @@ export function NavigationProvider({children}: {children: React.ReactNode}) {
       // Switching tabs always lands on the tab's root.
       setTab: next => {
         setDetail(null);
+        setSendingId(null);
         setTabState(next);
       },
       detail,
@@ -65,8 +71,11 @@ export function NavigationProvider({children}: {children: React.ReactNode}) {
         setDetailQuery('');
         setDetail(null);
       },
+      sendingId,
+      openSend: setSendingId,
+      closeSend: () => setSendingId(null),
     }),
-    [tab, detail, detailQuery],
+    [tab, detail, detailQuery, sendingId],
   );
 
   return (

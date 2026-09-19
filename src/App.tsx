@@ -9,15 +9,17 @@ import {PortalHost} from '@rn-primitives/portal';
 import {LaunchScreen} from '@/components/brand/LaunchScreen';
 import {AppShell} from '@/components/layout';
 import {AppearanceProvider} from '@/lib/appearance';
+import {CommunityProvider} from '@/lib/community';
 import {LaunchProvider} from '@/lib/launch';
 import {NavigationProvider, useNavigation} from '@/lib/navigation';
 import {SessionProvider, useSession} from '@/lib/session';
 import {InterestsOnboarding} from '@/screens/InterestsOnboarding';
 import {SignInScreen} from '@/screens/SignInScreen';
-import {AlertsScreen} from '@/screens/tabs/AlertsScreen';
+import {SendScreen} from '@/screens/SendScreen';
 import {CommunityScreen} from '@/screens/tabs/CommunityScreen';
-import {MeScreen} from '@/screens/tabs/MeScreen';
-import {RepliesScreen} from '@/screens/tabs/RepliesScreen';
+import {HomeScreen} from '@/screens/tabs/HomeScreen';
+import {InboxScreen} from '@/screens/tabs/InboxScreen';
+import {SettingsScreen} from '@/screens/tabs/SettingsScreen';
 
 function App() {
   return (
@@ -58,6 +60,19 @@ function Root() {
   }
 
   return (
+    <CommunityProvider>
+      <SignedIn />
+    </CommunityProvider>
+  );
+}
+
+/** The four tabs, or the send page over them. */
+function SignedIn() {
+  const {sendingId} = useNavigation();
+  if (sendingId) {
+    return <SendScreen alertId={sendingId} />;
+  }
+  return (
     <AppShell>
       <ActiveScreen />
     </AppShell>
@@ -67,14 +82,14 @@ function Root() {
 function ActiveScreen() {
   const {tab} = useNavigation();
   switch (tab) {
-    case 'Alerts':
-      return <AlertsScreen />;
+    case 'Home':
+      return <HomeScreen />;
     case 'Community':
       return <CommunityScreen />;
-    case 'Replies':
-      return <RepliesScreen />;
-    case 'Me':
-      return <MeScreen />;
+    case 'Inbox':
+      return <InboxScreen />;
+    case 'Settings':
+      return <SettingsScreen />;
   }
 }
 
