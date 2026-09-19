@@ -3,56 +3,56 @@
 @tailwind utilities;
 
 /*
- * Mbarĩ theme. Values are HSL channels consumed by tailwind.config.js as
- * hsl(var(--token)). Light is the original warm paper with near-black ink.
- * The one accent is clay red. Dark mode is the only place green appears:
- * a deep green-black ground with warm cream text.
+ * Mbarĩ theme (see ~/Documents/mbari/brand/index.html). HSL channels consumed
+ * by tailwind.config.js. Warm near-black ink on warm paper, one accent: deep
+ * maroon. Dark mode is near-black with only a trace of green; the maroon lifts
+ * so it still reads. `clay` is the tilde's colour.
  */
 @layer base {
   :root {
-    --background: 37 44% 96%;
-    --foreground: 30 10% 8%;
+    --background: 36 45.5% 95.7%;
+    --foreground: 33.3 20% 8.8%;
     --card: 0 0% 100%;
-    --card-foreground: 30 10% 8%;
+    --card-foreground: 33.3 20% 8.8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 30 10% 8%;
-    --primary: 13 74% 40%;
-    --primary-foreground: 35 100% 97%;
-    --secondary: 37 25% 91%;
-    --secondary-foreground: 30 10% 8%;
-    --muted: 37 25% 91%;
-    --muted-foreground: 30 6% 42%;
-    --accent: 37 25% 91%;
-    --accent-foreground: 30 10% 8%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 37 20% 87%;
-    --input: 37 20% 87%;
-    --ring: 13 70% 51%;
-    --clay: 13 70% 51%;
+    --popover-foreground: 33.3 20% 8.8%;
+    --primary: 2.5 53% 35.9%;
+    --primary-foreground: 27.7 100% 97.5%;
+    --secondary: 36 34.9% 91.6%;
+    --secondary-foreground: 33.3 20% 8.8%;
+    --muted: 36 34.9% 91.6%;
+    --muted-foreground: 33 10% 39.2%;
+    --accent: 36 34.9% 91.6%;
+    --accent-foreground: 33.3 20% 8.8%;
+    --destructive: 2.5 53% 35.9%;
+    --destructive-foreground: 27.7 100% 97.5%;
+    --border: 36 25.6% 84.7%;
+    --input: 36 25.6% 84.7%;
+    --ring: 2.5 53% 35.9%;
+    --clay: 2.5 53% 35.9%;
     --radius: 1rem;
   }
 
   .dark:root {
-    --background: 156 41% 7%;
-    --foreground: 40 30% 95%;
-    --card: 155 35% 10%;
-    --card-foreground: 40 30% 95%;
-    --popover: 155 35% 10%;
-    --popover-foreground: 40 30% 95%;
-    --primary: 15 84% 63%;
-    --primary-foreground: 30 10% 8%;
-    --secondary: 155 25% 13%;
-    --secondary-foreground: 40 30% 95%;
-    --muted: 155 25% 13%;
-    --muted-foreground: 35 8% 62%;
-    --accent: 155 25% 13%;
-    --accent-foreground: 40 30% 95%;
-    --destructive: 0 65% 55%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 155 20% 16%;
-    --input: 155 20% 16%;
-    --ring: 13 70% 51%;
-    --clay: 13 70% 51%;
+    --background: 150 11.8% 6.7%;
+    --foreground: 36.9 35.1% 92.7%;
+    --card: 144 9.8% 10%;
+    --card-foreground: 36.9 35.1% 92.7%;
+    --popover: 144 9.8% 10%;
+    --popover-foreground: 36.9 35.1% 92.7%;
+    --primary: 7.7 65.4% 64.9%;
+    --primary-foreground: 150 11.8% 6.7%;
+    --secondary: 140 8.8% 13.3%;
+    --secondary-foreground: 36.9 35.1% 92.7%;
+    --muted: 140 8.8% 13.3%;
+    --muted-foreground: 33.9 11.4% 60.6%;
+    --accent: 140 8.8% 13.3%;
+    --accent-foreground: 36.9 35.1% 92.7%;
+    --destructive: 7.7 65.4% 64.9%;
+    --destructive-foreground: 150 11.8% 6.7%;
+    --border: 140 7.1% 16.5%;
+    --input: 140 7.1% 16.5%;
+    --ring: 7.7 65.4% 64.9%;
+    --clay: 4.7 56.5% 51.4%;
   }
 }

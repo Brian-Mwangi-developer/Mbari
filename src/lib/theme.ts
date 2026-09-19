@@ -1,29 +1,37 @@
+import {useAppearance} from '@/lib/appearance';
+
 // Mirrors the CSS variables in global.css for places that need raw colour
-// values (StatusBar, native props, SVG) rather than classNames.
-// Green appears only as the dark-mode ground; the only accent is clay red.
+// values (icons, SVG, StatusBar) rather than classNames.
 export const THEME = {
   light: {
-    background: '#F9F6F0',
-    foreground: '#161412',
+    background: '#F9F5EF',
+    foreground: '#1B1712',
     card: '#FFFFFF',
-    well: '#EEE9E2',
-    border: '#E4DFD7',
-    /** Buttons, links and the active tab. */
-    primary: '#B23B1B',
-    /** The graphic red: the tilde marker. */
-    clay: '#D9502B',
-    mutedForeground: '#726B65',
+    surface: '#F1EBE2',
+    border: '#E2DACE',
+    /** Buttons, links, the active tab. */
+    primary: '#8C2F2B',
+    primaryForeground: '#FFF8F2',
+    /** The tilde. */
+    clay: '#8C2F2B',
+    mutedForeground: '#6E655A',
   },
   dark: {
-    background: '#0B1A14',
-    foreground: '#F6F3EE',
-    card: '#10231B',
-    well: '#1A2B24',
-    border: '#212F29',
-    primary: '#F0764F',
-    clay: '#D9502B',
-    mutedForeground: '#A39E97',
+    background: '#0F1311',
+    foreground: '#F3EEE6',
+    card: '#171C19',
+    surface: '#1F2521',
+    border: '#272D29',
+    primary: '#E07A6B',
+    primaryForeground: '#0F1311',
+    clay: '#C9483D',
+    mutedForeground: '#A69C8F',
   },
 } as const;
 
 export type ThemeName = keyof typeof THEME;
+
+/** The raw colours for the scheme in effect. */
+export function useTheme() {
+  return THEME[useAppearance().resolved];
+}

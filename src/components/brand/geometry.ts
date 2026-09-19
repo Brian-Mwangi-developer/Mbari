@@ -24,6 +24,6 @@ export const TILDE_PATH = 'M11.95 30.59 L16.88 27.18 L21.99 23.71 L27.3 20.23 L3
 export const SPLASH_SCALE = 0.4;
 
 export const BRAND_COLORS = {
-  light: {ink: '#161412', clay: '#D9502B', ground: '#F9F6F0'},
-  dark: {ink: '#F6F3EE', clay: '#D9502B', ground: '#0B1A14'},
+  light: {ink: '#1B1712', clay: '#8C2F2B', ground: '#F9F5EF'},
+  dark: {ink: '#F3EEE6', clay: '#C9483D', ground: '#0F1311'},
 } as const;
