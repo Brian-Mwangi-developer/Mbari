@@ -5,11 +5,11 @@ import {THEME} from '@/lib/theme';
 import {useAppearance} from '@/lib/appearance';
 
 /** One period of a sine, as a path: the tilde's shape, used as a marker. */
-function wave(width: number, amp: number, steps = 30): string {
+export function wave(width: number, amp: number, steps = 30, periods = 1): string {
   const pts: string[] = [];
   for (let i = 0; i <= steps; i++) {
     const x = (width * i) / steps;
-    const y = -amp * Math.sin((2 * Math.PI * i) / steps);
+    const y = -amp * Math.sin((2 * Math.PI * periods * i) / steps);
     pts.push(`${i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`);
   }
   return pts.join(' ');
