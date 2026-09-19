@@ -1,0 +1,10 @@
+# React Native (Metro + Gradle autolinking) expects a flat node_modules tree.
+nodeLinker: hoisted
+shamefullyHoist: true
+minimumReleaseAgeExclude:
+  - lucide-react-native@1.45.0
+# Firebase's web SDK postinstall scripts (pulled in by @react-native-firebase);
+# the Android app uses the native SDK, so they never need to run.
+allowBuilds:
+  '@firebase/util': false
+  protobufjs: false

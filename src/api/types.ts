@@ -1,0 +1,237 @@
+/**
+ * Wire types. These mirror the backend responses and are deliberately the same
+ * shapes the UI components already consumed from `data/mock.ts`, so screens did
+ * not have to change when the real data arrived.
+ */
+
+/** One card in the Today deck. `id` is the article id the reader opens and signals against. */
+export type DeckCard = {
+  id: string;
+  pickId: string;
+  /** Where it sits in the reader's rolling queue. */
+  position: number;
+  source: string;
+  author: string | null;
+  title: string;
+  why: string;
+  excerpt: string | null;
+  readMinutes: number;
+  url: string;
+  publishedAt: string;
+  /** Up to two topic labels, e.g. "Tech strategy". */
+  topics: string[];
+  liked: boolean;
+  saved: boolean;
+  state: ItemState;
+};
+
+/** What the reader's library holds, so an empty queue can say why. */
+export type DeckStats = {
+  library: number;
+  /** Unread from followed sources, not yet dealt. */
+  unread: number;
+  read: number;
+  passed: number;
+  /** Moved past with "next"; dealt again after a short cooldown. */
+  comingBack: number;
+  /** Unread issues from newsletter senders not kept yet. */
+  waitingSenders: number;
+};
+
+/** The rolling queue of recommendations. */
+export type TodayDeck = {
+  dayKey: string;
+  /** Cards not yet read, passed or moved past, in order. */
+  cards: DeckCard[];
+  /** "caught_up" when there is nothing left to recommend right now. */
+  exhausted: 'caught_up' | null;
+  stats: DeckStats;
+};
+
+export type SignalType = 'open' | 'close' | 'pass' | 'skip' | 'return' | 'like' | 'unlike' | 'save' | 'unsave';
+
+export type SignalBody = {
+  type: SignalType;
+  /** Card on screen before this, in ms. */
+  dwellMs?: number;
+  /** Reader progress on close, 0..1. */
+  progress?: number;
+  /** Foreground reading time for this open, in ms. */
+  readMs?: number;
+  position?: number;
+  clientEventId?: string;
+};
+
+export type SignalResult = {
+  state: ItemState;
+  liked: boolean;
+  saved: boolean;
+  duplicate: boolean;
+};
+
+export type ClientEvent = {
+  type: 'card_view' | 'play_tapped' | 'deck_exhausted' | 'deck_opened';
+  itemId?: string;
+  position?: number;
+  dwellMs?: number;
+  clientEventId: string;
+  occurredAt: string;
+};
+
+export type InterestTopic = {slug: string; label: string};
+
+export type ReaderInterests = {
+  stated: string[];
+  statedTopics: InterestTopic[];
+  noticed: (InterestTopic & {trend: 'rising' | 'steady'; since: string})[];
+  lately: InterestTopic[];
+  suggestions: InterestTopic[];
+};
+
+export type ArchiveItem = {
+  id: string;
+  /** ISO date the pick was surfaced. */
+  date: string;
+  source: string;
+  title: string;
+  /** Whether the user opened it. Unread picks stay bright in the list. */
+  read: boolean;
+};
+
+/** Where an article got to for this user. */
+export type ItemState = 'candidate' | 'served' | 'opened' | 'finished' | 'dismissed';
+
+/** One article in the user's own library — something that actually reached them. */
+export type LibraryItem = {
+  id: string;
+  source: string;
+  kind: 'email' | 'rss';
+  title: string;
+  author: string | null;
+  excerpt: string | null;
+  readMinutes: number;
+  /** ISO timestamps. */
+  publishedAt: string;
+  pulledAt: string;
+  state: ItemState;
+  liked: boolean;
+  saved: boolean;
+};
+
+export type SavedItem = LibraryItem & {savedAt: string | null};
+
+export type LibraryPage = {
+  items: LibraryItem[];
+  /** Pass back to fetch the next page; null on the last one. */
+  nextCursor: string | null;
+};
+
+/** A pick the user skipped, or never opened before a newer one replaced it. */
+export type PassedOverItem = LibraryItem & {
+  reason: 'dismissed' | 'unopened';
+  servedAt: string | null;
+};
+
+/** A run of text inside a paragraph; `highlight` marks the agent's key line. */
+export type Segment = {text: string; highlight?: boolean};
+
+export type Article = {
+  id: string;
+  source: string;
+  author: string | null;
+  title: string;
+  readMinutes: number;
+  url: string;
+  liked?: boolean;
+  saved?: boolean;
+  body: Segment[][];
+};
+
+export type Feed = {
+  id: string;
+  name: string;
+  /** How the feed reaches us: a newsletter sender or an RSS URL. */
+  kind: 'email' | 'rss';
+  /** Muted feeds stay subscribed but are excluded from ranking. */
+  muted: boolean;
+};
+
+export type Account = {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  onboardingDone: boolean;
+  timezone: string;
+  interests: string[];
+  /** Days an unread article stays in the library after it arrives. */
+  unreadExpiryDays: UnreadExpiryDays;
+};
+
+export type UnreadExpiryDays = 14 | 30;
+
+/** A mailbox asking to auto-forward into the user's Mbari address. */
+export type ForwardingRequest = {
+  id: string;
+  provider: 'gmail' | string;
+  /** The mailbox that asked, e.g. reader@gmail.com. */
+  requestedBy: string;
+  receivedAt: string;
+  /** Null until the user chooses Confirm in the app. */
+  confirmedAt: string | null;
+};
+
+export type InboxAddress = {
+  /** e.g. brian-7f3a@in.mbari.com */
+  address: string;
+  localPart: string;
+  domain: string;
+  forwarding: ForwardingRequest | null;
+};
+
+/** A sender discovered from inbound mail, waiting to be kept or ignored. */
+export type PendingSource = {
+  id: string;
+  name: string;
+  kind: 'email' | 'rss';
+  fromAddress: string | null;
+  issues: number;
+  latestTitle: string | null;
+  latestAt: string;
+};
+
+export type GmailFilterMode = 'newsletters' | 'approved';
+
+/** A stretch of the reader's day when a recommendation may be pushed, in their timezone. */
+export type DeliveryWindow = {
+  id?: string;
+  label: string;
+  /** "07:30" */
+  start: string;
+  /** "08:30", or "24:00" for midnight. */
+  end: string;
+  /** 1 = Monday … 7 = Sunday. */
+  days: number[];
+  enabled: boolean;
+};
+
+export type SavedDeliveryWindow = DeliveryWindow & {
+  id: string;
+  /** ISO time it next fires, when it will. */
+  nextAt: string | null;
+};
+
+export type DeliverySettings = {
+  timezone: string;
+  notificationsEnabled: boolean;
+  /** At most this many notifications a day, 1–3. */
+  perDay: number;
+  windows: SavedDeliveryWindow[];
+  nextNotificationAt: string | null;
+  /** Whether the server can send pushes, and how many of this reader's devices can receive them. */
+  push: {configured: boolean; devices: number};
+};
+
+export type TestNotificationResult =
+  | {status: 'sent' | 'dry_run'; deliveryId: string; itemId: string; devices: number}
+  | {status: 'skipped' | 'failed'; deliveryId: string | null; reason: string};

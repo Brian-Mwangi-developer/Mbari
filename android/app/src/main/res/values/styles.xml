@@ -1,0 +1,22 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+        <!-- The splash colour, so nothing flashes white before the first React frame. -->
+        <item name="android:windowBackground">@color/splash_background</item>
+    </style>
+
+    <!--
+      Launch theme: the Mbari mark on the app's background (dark in night
+      mode), through androidx.core:core-splashscreen, so Android 7–11 match 12+.
+      MainActivity keeps it up until JavaScript draws the same mark in the same
+      place (src/components/brand/LaunchScreen.tsx), then hands over.
+    -->
+    <style name="Theme.Mbari.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_mark</item>
+        <item name="postSplashScreenTheme">@style/AppTheme</item>
+    </style>
+
+</resources>

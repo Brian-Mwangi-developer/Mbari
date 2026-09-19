@@ -1,0 +1,218 @@
+import {apiFetch, setToken} from './client';
+import type {
+  Account,
+  DeliverySettings,
+  DeliveryWindow,
+  TestNotificationResult,
+  ClientEvent,
+  ReaderInterests,
+  SavedItem,
+  SignalBody,
+  SignalResult,
+  TodayDeck,
+  GmailFilterMode,
+  InboxAddress,
+  UnreadExpiryDays,
+  LibraryItem,
+  LibraryPage,
+  PassedOverItem,
+  PendingSource,
+  Article,
+  ArchiveItem,
+  Feed,
+} from './types';
+
+/** Every backend call the app makes, in one place. */
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+type AuthResponse = {token?: string; user?: {id: string}};
+
+async function authenticate(path: string, body: unknown): Promise<void> {
+  const result = await apiFetch<AuthResponse>(path, {
+    method: 'POST',
+    body,
+    anonymous: true,
+  });
+  if (!result?.token) {
+    throw new Error('The server did not return a session token.');
+  }
+  await setToken(result.token);
+}
+
+export const signUp = (email: string, password: string, name: string) =>
+  authenticate('/api/auth/sign-up/email', {email, password, name});
+
+export const signIn = (email: string, password: string) =>
+  authenticate('/api/auth/sign-in/email', {email, password});
+
+
+export const signInWithGoogle = (idToken: string, nonce: string) =>
+  authenticate('/api/auth/sign-in/social', {
+    provider: 'google',
+    idToken: {token: idToken, nonce},
+  });
+
+export async function signOut(): Promise<void> {
+  try {
+    await apiFetch('/api/auth/sign-out', {method: 'POST'});
+  } catch {
+    // Even if the server call fails, drop the local token so the device is
+    // signed out from the user's point of view.
+  }
+  await setToken(null);
+}
+
+// ── Profile ───────────────────────────────────────────────────────────────────
+
+export const getAccount = () => apiFetch<Account>('/api/v1/me');
+
+export const updateProfile = (patch: {
+  timezone?: string;
+  interests?: string[];
+  onboardingDone?: boolean;
+  unreadExpiryDays?: UnreadExpiryDays;
+}) => apiFetch<{timezone: string; interests: string[]; unreadExpiryDays: UnreadExpiryDays}>('/api/v1/me', {
+  method: 'PATCH',
+  body: patch,
+});
+
+// ── Content ───────────────────────────────────────────────────────────────────
+
+/**
+ * The rolling queue. Pass the card on screen: the server re-ranks what is
+ * behind it with the latest signals and leaves that card and the next alone.
+ */
+export const getToday = (currentId?: string | null) =>
+  apiFetch<TodayDeck>(`/api/v1/today${currentId ? `?current=${encodeURIComponent(currentId)}` : ''}`);
+
+export const getArchive = () => apiFetch<ArchiveItem[]>('/api/v1/archive');
+
+export const getArticle = (id: string) =>
+  apiFetch<Article>(`/api/v1/articles/${encodeURIComponent(id)}`);
+
+/** One reader signal. Prefer `signal()` from lib/signals, which queues and retries. */
+export const sendSignal = (id: string, body: SignalBody) =>
+  apiFetch<SignalResult>(`/api/v1/articles/${encodeURIComponent(id)}/signal`, {
+    method: 'POST',
+    body,
+  });
+
+/** A batch of telemetry. Answered 202 once queued on the server. */
+export const sendEvents = (events: ClientEvent[]) =>
+  apiFetch<{accepted: number}>('/api/v1/events', {method: 'POST', body: {events}});
+
+// ── Interests ─────────────────────────────────────────────────────────────────
+
+export const getInterests = () => apiFetch<ReaderInterests>('/api/v1/me/interests');
+
+export const setInterests = (interests: string[]) =>
+  apiFetch<ReaderInterests>('/api/v1/me/interests', {method: 'PUT', body: {interests}});
+
+export const setInterestHidden = (slug: string, hidden: boolean) =>
+  apiFetch<ReaderInterests>(
+    `/api/v1/me/interests/${encodeURIComponent(slug)}/${hidden ? 'hide' : 'show'}`,
+    {method: 'POST'},
+  );
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+
+export const getDelivery = () => apiFetch<DeliverySettings>('/api/v1/me/delivery');
+
+export const updateDelivery = (patch: {notificationsEnabled?: boolean; perDay?: number}) =>
+  apiFetch<DeliverySettings>('/api/v1/me/delivery', {method: 'PATCH', body: patch});
+
+/** Replaces every window; ones missing from the list are removed. */
+export const saveDeliveryWindows = (windows: DeliveryWindow[]) =>
+  apiFetch<DeliverySettings>('/api/v1/me/delivery/windows', {method: 'PUT', body: {windows}});
+
+export const sendTestNotification = () =>
+  apiFetch<TestNotificationResult>('/api/v1/me/delivery/test', {method: 'POST'});
+
+export const registerDevice = (token: string, appVersion: string) =>
+  apiFetch<{registered: boolean}>('/api/v1/devices', {method: 'POST', body: {token, platform: 'android', appVersion}});
+
+export const unregisterDevice = (token: string) =>
+  apiFetch<{registered: boolean}>(`/api/v1/devices/${encodeURIComponent(token)}`, {method: 'DELETE'});
+
+export const notificationOpened = (deliveryId: string) =>
+  apiFetch<{opened: boolean}>(`/api/v1/notifications/${encodeURIComponent(deliveryId)}/opened`, {method: 'POST'});
+
+// ── Library ───────────────────────────────────────────────────────────────────
+
+/** Everything pulled for this user, newest first, a page at a time. */
+export const getLibrary = (cursor?: string | null) =>
+  apiFetch<LibraryPage>(
+    `/api/v1/library${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,
+  );
+
+/** Picks the user skipped or never opened. */
+export const getPassedOver = () =>
+  apiFetch<PassedOverItem[]>('/api/v1/library/passed');
+
+/** Saved for later, most recent save first. */
+export const getSaved = () => apiFetch<SavedItem[]>('/api/v1/library/saved');
+
+/** Search the user's own library. The server needs at least two characters. */
+export const searchLibrary = (query: string) =>
+  apiFetch<LibraryItem[]>(
+    `/api/v1/library/search?q=${encodeURIComponent(query)}`,
+  );
+
+// ── Sources ───────────────────────────────────────────────────────────────────
+
+export const getSources = () => apiFetch<Feed[]>('/api/v1/sources');
+
+export const addSource = (url: string) =>
+  apiFetch<Feed>('/api/v1/sources', {method: 'POST', body: {url}});
+
+export const setSourceMuted = (id: string, muted: boolean) =>
+  apiFetch<{id: string; muted: boolean}>(`/api/v1/sources/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: {muted},
+  });
+
+export const removeSource = (id: string) =>
+  apiFetch<{id: string}>(`/api/v1/sources/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+
+
+export const getAddress = () => apiFetch<InboxAddress>('/api/v1/me/address');
+
+/**
+ * Record that the user recognised the forwarding request, and receive
+ * Google's confirmation link to open. The backend never opens it itself.
+ */
+export const confirmForwarding = (id: string) =>
+  apiFetch<{confirmUrl: string}>(
+    `/api/v1/me/forwarding/${encodeURIComponent(id)}/confirm`,
+    {method: 'POST'},
+  );
+
+/** A 15-minute link to the Gmail filter file, to share to a computer. */
+export const createGmailFilterLink = (mode: GmailFilterMode = 'newsletters') =>
+  apiFetch<{url: string; expiresAt: string}>('/api/v1/me/gmail-filter/link', {
+    method: 'POST',
+    body: {mode},
+  });
+
+// ── Source review ─────────────────────────────────────────────────────────────
+
+export const getPendingSources = () =>
+  apiFetch<PendingSource[]>('/api/v1/sources/pending');
+
+export const keepSource = (id: string) =>
+  apiFetch<{id: string; status: string}>(
+    `/api/v1/sources/${encodeURIComponent(id)}/keep`,
+    {method: 'POST'},
+  );
+
+export const ignoreSource = (id: string) =>
+  apiFetch<{id: string; status: string}>(
+    `/api/v1/sources/${encodeURIComponent(id)}/ignore`,
+    {method: 'POST'},
+  );
+
+export {ApiError, getToken, setToken} from './client';
+export * from './types';
