@@ -22,6 +22,7 @@ import type {
   Feed,
   DemoInfo,
   AlertPage,
+  AlertEvidence,
   WireAlert,
   Role,
   Organization,
@@ -115,6 +116,10 @@ export const updateProfile = (patch: {
 /** Newest first. National alerts come with every county. */
 export const getAlerts = (county: string, limit = 30) =>
   apiFetch<AlertPage>(`/api/v1/alerts?county=${encodeURIComponent(county)}&limit=${limit}`);
+
+/** The source, fingerprint and page text behind an alert. */
+export const getAlertEvidence = (id: string) =>
+  apiFetch<AlertEvidence>(`/api/v1/alerts/${encodeURIComponent(id)}/evidence`);
 
 /** "Send to community": the alert waits for an NGO approver. Nothing goes out yet. */
 export const requestSend = (id: string) =>

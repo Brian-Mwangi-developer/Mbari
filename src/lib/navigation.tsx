@@ -32,7 +32,11 @@ type NavigationContextValue = {
   detailQuery: string;
   openDetail: (detail: Detail, options?: DetailOptions) => void;
   closeDetail: () => void;
-  /** The alert being prepared for sending, shown over the tabs. */
+  /** The alert being read: what was found and where. Shown over the tabs. */
+  viewingId: string | null;
+  openAlert: (alertId: string) => void;
+  closeAlert: () => void;
+  /** The alert being prepared for sending, shown over the tabs (and over the alert page). */
   sendingId: string | null;
   openSend: (alertId: string) => void;
   closeSend: () => void;
@@ -50,6 +54,7 @@ export function NavigationProvider({children}: {children: React.ReactNode}) {
   const [tab, setTabState] = React.useState<Tab>('Home');
   const [detail, setDetail] = React.useState<Detail | null>(null);
   const [detailQuery, setDetailQuery] = React.useState('');
+  const [viewingId, setViewingId] = React.useState<string | null>(null);
   const [sendingId, setSendingId] = React.useState<string | null>(null);
 
   const value = React.useMemo<NavigationContextValue>(
@@ -58,6 +63,7 @@ export function NavigationProvider({children}: {children: React.ReactNode}) {
       // Switching tabs always lands on the tab's root.
       setTab: next => {
         setDetail(null);
+        setViewingId(null);
         setSendingId(null);
         setTabState(next);
       },
@@ -71,11 +77,14 @@ export function NavigationProvider({children}: {children: React.ReactNode}) {
         setDetailQuery('');
         setDetail(null);
       },
+      viewingId,
+      openAlert: setViewingId,
+      closeAlert: () => setViewingId(null),
       sendingId,
       openSend: setSendingId,
       closeSend: () => setSendingId(null),
     }),
-    [tab, detail, detailQuery, sendingId],
+    [tab, detail, detailQuery, viewingId, sendingId],
   );
 
   return (

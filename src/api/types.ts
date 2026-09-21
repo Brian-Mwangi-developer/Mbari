@@ -281,3 +281,24 @@ export type WireAlert = {
 };
 
 export type AlertPage = {items: WireAlert[]; nextCursor: string | null};
+
+/** What an alert rests on, from GET /api/v1/alerts/:id/evidence. */
+export type AlertEvidence = {
+  sourceName: string;
+  pageTitle: string | null;
+  /** The exact page Firecrawl read. */
+  url: string;
+  fetchedAt: string;
+  previousCheckAt: string | null;
+  changeStatus: 'new' | 'same' | 'changed' | 'removed';
+  /** sha256 of the page as fetched. */
+  contentHash: string;
+  aiGenerated: boolean;
+  summarizer: string;
+  /** Text the latest change put on the page. */
+  added: string[];
+  /** Lines of the page that match the summary, in page order, each with the link it carries. */
+  quotes: {text: string; url: string | null}[];
+  /** The notice itself (often a PDF) when the page links to it; null when `url` is the closest link. */
+  itemUrl: string | null;
+};

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {Pressable, RefreshControl, ScrollView, View} from 'react-native';
-import {CircleCheck, Clock, CloudOff, Link, Send, Sparkles, Volume2} from 'lucide-react-native';
+import {ChevronRight, CircleCheck, Clock, CloudOff, Link, Send, Sparkles, Volume2} from 'lucide-react-native';
 
 import {TildeMarker} from '@/components/brand/Tilde';
 import {Card, Kicker, ListCard, LocationPill, MetaLine, PillButton, RoundButton, TabHeader} from '@/components/mbari/parts';
@@ -18,7 +18,7 @@ function today(): string {
 /** Home: the newest update for your county, then what came before. */
 export function HomeScreen() {
   const {county, alerts, error, refresh} = useCommunity();
-  const {openSend} = useNavigation();
+  const {openSend, openAlert} = useNavigation();
   const theme = useTheme();
   const [refreshing, setRefreshing] = React.useState(false);
   // Live alerts come first in `alerts`, so a real update leads over a sample.
@@ -46,13 +46,17 @@ export function HomeScreen() {
             <Text className="flex-1 text-[13px] text-muted-foreground">Live updates unavailable: {error} Pull down to retry.</Text>
           </View>
         ) : null}
-        {lead ? <LeadCard alert={lead} onSend={() => openSend(lead.id)} /> : <AllCaughtUp county={county} />}
+        {lead ? (
+          <LeadCard alert={lead} onOpen={() => openAlert(lead.id)} onSend={() => openSend(lead.id)} />
+        ) : (
+          <AllCaughtUp county={county} />
+        )}
         {earlier.length > 0 ? (
           <>
             <Kicker className="ml-1 mt-4">Earlier updates</Kicker>
             <ListCard>
               {earlier.map(alert => (
-                <EarlierRow key={alert.id} alert={alert} onPress={() => openSend(alert.id)} />
+                <EarlierRow key={alert.id} alert={alert} onPress={() => openAlert(alert.id)} />
               ))}
             </ListCard>
           </>
@@ -62,10 +66,15 @@ export function HomeScreen() {
   );
 }
 
-function LeadCard({alert, onSend}: {alert: Alert; onSend: () => void}) {
+function LeadCard({alert, onOpen, onSend}: {alert: Alert; onOpen: () => void; onSend: () => void}) {
+  const theme = useTheme();
   return (
     <Card className="overflow-hidden">
-      <View className="px-5 pb-1 pt-5">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityHint="Opens what was found, with the source page"
+        onPress={onOpen}
+        className="px-5 pb-1 pt-5 active:opacity-80">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-2">
             <Kicker>{alert.topic}</Kicker>
@@ -86,7 +95,11 @@ function LeadCard({alert, onSend}: {alert: Alert; onSend: () => void}) {
             Summary written with AI from the source
           </MetaLine>
         ) : null}
-      </View>
+        <View className="mt-3 flex-row items-center gap-1 self-start py-1">
+          <Text className="text-[14px] font-semibold text-primary">Read what we found</Text>
+          <ChevronRight size={16} color={theme.primary} strokeWidth={2.4} />
+        </View>
+      </Pressable>
       <View className="mt-4 flex-row items-center gap-3 border-t border-border px-4 py-3.5">
         <RoundButton icon={Volume2} label="Listen" onPress={onSend} />
         <PillButton label="Send to community" icon={Send} onPress={onSend} className="flex-1" />
