@@ -140,9 +140,9 @@ export function SignInScreen() {
             <View className="mt-7 rounded-2xl border border-dashed border-border bg-secondary/60 p-4">
               <View className="flex-row items-center gap-2">
                 <KeyRound size={16} color={colors.mutedForeground} strokeWidth={2.25} />
-                <Text className="text-[15px] font-semibold">Judging? Use the demo account</Text>
+                <Text className="text-[15px] font-semibold">Use the demo account</Text>
               </View>
-              <Text className="mt-1 text-[13px] text-muted-foreground">{demo.label}. No sign-up needed.</Text>
+              <Text className="mt-1 text-[13px] text-muted-foreground">Sign in as {demo.name}, {demo.label.toLowerCase()}. No sign-up needed.</Text>
               <View className="mt-3 gap-1">
                 <Text selectable className="text-[14px]">
                   <Text className="text-[14px] text-muted-foreground">Email </Text>

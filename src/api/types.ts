@@ -246,7 +246,7 @@ export type TestNotificationResult =
   | {status: 'sent' | 'dry_run'; deliveryId: string; itemId: string; devices: number}
   | {status: 'skipped' | 'failed'; deliveryId: string | null; reason: string};
 
-/** A ready-made login for judges, from GET /api/v1/demo. */
+/** A ready-made demo login, from GET /api/v1/demo. */
 export type DemoAccount = {
   app: 'web' | 'mobile';
   label: string;

@@ -28,7 +28,7 @@ const mount = async () => {
 const ME = {
   id: 'u1',
   name: 'Kamau Njoroge',
-  email: 'relay@demo.mbari.app',
+  email: 'kamau@demo.mbari.app',
   image: null,
   role: 'member',
   onboardingDone: true,
@@ -87,7 +87,7 @@ test('email sign-in stores the bearer token and loads the account', async () => 
   backend();
   await mount();
   await ReactTestRenderer.act(async () => {
-    await session.signIn('relay@demo.mbari.app', 'MbariDemo2026');
+    await session.signIn('kamau@demo.mbari.app', 'MbariDemo2026');
   });
 
   expect(session.status).toBe('signedIn');
@@ -114,7 +114,7 @@ test('a wrong password throws the server message and stays signed out', async ()
   await mount();
   let error: unknown;
   await ReactTestRenderer.act(async () => {
-    await session.signIn('relay@demo.mbari.app', 'wrong').catch(e => {
+    await session.signIn('kamau@demo.mbari.app', 'wrong').catch(e => {
       error = e;
     });
   });
@@ -141,7 +141,7 @@ test('signing out tells the server, drops the token and returns to the landing',
   backend();
   await mount();
   await ReactTestRenderer.act(async () => {
-    await session.signIn('relay@demo.mbari.app', 'MbariDemo2026');
+    await session.signIn('kamau@demo.mbari.app', 'MbariDemo2026');
   });
   await ReactTestRenderer.act(async () => {
     await session.signOut();

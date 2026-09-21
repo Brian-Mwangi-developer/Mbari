@@ -159,4 +159,4 @@ export const MESSAGES: Message[] = [
 
 export const LANGUAGES = ['Gĩkũyũ', 'Somali', 'Ateso'] as const;
 
-export const APPROVER = {name: 'Wanjiru M.', initials: 'WM'};
+export const APPROVER = {name: 'Wanjirũ Mwangi', initials: 'WM'};
