@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Hackathon: the app talks to mbari-backend over plain http on the LAN
+  (src/api/config.ts). React Native's Gradle plugin forces
+  usesCleartextTraffic=false on release builds, so cleartext is allowed
+  here instead, which Android applies over that flag. Remove once the API
+  is served over https.
+-->
+<network-security-config>
+  <base-config cleartextTrafficPermitted="true">
+    <trust-anchors>
+      <certificates src="system" />
+    </trust-anchors>
+  </base-config>
+</network-security-config>

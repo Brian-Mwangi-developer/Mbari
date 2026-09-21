@@ -8,7 +8,7 @@
  * builds for this reason (android/app/build.gradle); switch to the https API
  * once it is deployed.
  */
-export const API_BASE_URL = 'http://172.16.104.82:4000';
+export const API_BASE_URL = 'http://192.168.0.103:4000';
 
 export const API_TIMEOUT_MS = 20000;
 
