@@ -131,8 +131,8 @@ export function SendScreen({alertId}: {alertId: string}) {
         <View className="mt-4 flex-row items-start gap-2">
           <Info size={15} color={theme.mutedForeground} style={styles.infoIcon} />
           <Text className="flex-1 text-[13px] leading-[19px] text-muted-foreground">
-            Listen to all of it first. Every call starts: “This message was made with AI by Mbarĩ for{' '}
-            {group?.name ?? 'your community'}.”
+            Listen to all of it first. Every call starts by saying a computer made the message, so{' '}
+            {group?.name ?? 'your community'} always knows.
           </Text>
         </View>
 

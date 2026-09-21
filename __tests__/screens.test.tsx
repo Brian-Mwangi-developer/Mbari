@@ -104,6 +104,7 @@ test('a recorded message can be translated to Gĩkũyũ, and the result is marke
     spokenLanguage: 'en',
     english: 'Come to the ward meeting.',
     translation: 'Ũkai mũcemanio-inĩ wa wadi.',
+    disclosure: {text: 'Ndũmĩrĩri ĩno yathondekirũo nĩ kompiuta, ti mũndũ.', english: 'This message was made by a computer, not by a person.'},
     audio: {url: '/api/v1/voice/v1/audio/translation?exp=1&sig=x', durationMs: 4000},
     madeBy: {transcript: 'whisper', english: null, translation: 'nllb-200-distilled-600M', voice: 'mms-tts-kik'},
     createdAt: '2026-09-21T12:00:00.000Z',
@@ -121,6 +122,7 @@ test('a recorded message can be translated to Gĩkũyũ, and the result is marke
   expect(texts(r)).toContain('Ũkai mũcemanio-inĩ wa wadi.');
   expect(texts(r)).toContain('Come to the ward meeting.');
   expect(texts(r).some(t => t.startsWith('Made by AI'))).toBe(true);
+  expect(texts(r)).toContain('This message was made by a computer, not by a person.');
 
   // Recording again throws the old translation away.
   await ReactTestRenderer.act(() => community.saveRecording('a1', {uri: 'file:///take2.m4a', durationMs: 6000}));

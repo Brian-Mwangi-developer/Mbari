@@ -174,6 +174,17 @@ function Translated({voice}: {voice: VoiceMessage}) {
       {error ? <Text className="mt-2 text-[13px] text-destructive">{error}</Text> : null}
 
       <View className="mt-4 gap-3.5 border-t border-border pt-3.5">
+        {voice.disclosure ? (
+          <View>
+            <Kicker>Every call opens with</Kicker>
+            <Text selectable className="mt-1.5 text-[15px] leading-[22px]">
+              “{voice.disclosure.text}”
+            </Text>
+            {voice.disclosure.english ? (
+              <Text className="mt-1 text-[12.5px] text-muted-foreground">{voice.disclosure.english}</Text>
+            ) : null}
+          </View>
+        ) : null}
         <View>
           <Kicker>In {voice.targetLanguageName}</Kicker>
           <Text selectable className="mt-1.5 text-[15px] leading-[22px]">

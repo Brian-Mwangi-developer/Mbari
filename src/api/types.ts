@@ -321,6 +321,8 @@ export type VoiceMessage = {
   /** The transcript tidied for translation (or as heard). */
   english: string | null;
   translation: string | null;
+  /** Spoken first on every message: that a computer made it. */
+  disclosure: {text: string; english: string | null} | null;
   audio: {url: string; durationMs: number | null} | null;
   madeBy: {transcript: string | null; english: string | null; translation: string | null; voice: string | null};
   createdAt: string;
