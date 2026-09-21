@@ -21,6 +21,8 @@ import type {
   ArchiveItem,
   Feed,
   DemoInfo,
+  AlertPage,
+  WireAlert,
   Role,
   Organization,
 } from './types';
@@ -107,6 +109,16 @@ export const updateProfile = (patch: {
   method: 'PATCH',
   body: patch,
 });
+
+// ── Alerts ────────────────────────────────────────────────────────────────────
+
+/** Newest first. National alerts come with every county. */
+export const getAlerts = (county: string, limit = 30) =>
+  apiFetch<AlertPage>(`/api/v1/alerts?county=${encodeURIComponent(county)}&limit=${limit}`);
+
+/** "Send to community": the alert waits for an NGO approver. Nothing goes out yet. */
+export const requestSend = (id: string) =>
+  apiFetch<WireAlert>(`/api/v1/alerts/${encodeURIComponent(id)}/request-send`, {method: 'POST'});
 
 // ── Content ───────────────────────────────────────────────────────────────────
 

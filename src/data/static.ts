@@ -10,7 +10,8 @@ export type AlertStatus = 'new' | 'waiting' | 'sent';
 
 export type Alert = {
   id: string;
-  county: County;
+  /** A county name; national alerts carry the county they are shown under. */
+  county: string;
   topic: string;
   title: string;
   /** Plain-language summary, written with AI from the source. */
@@ -22,8 +23,17 @@ export type Alert = {
   /** Short relative time for the list. */
   ago: string;
   status: AlertStatus;
+  /** Placeholder content shipped with the app, not from the server. */
+  sample?: boolean;
+  /** From a national publisher (ministry, Controller of Budget): shown under every county. */
+  national?: boolean;
+  /** The title and summary were written by a model. */
+  aiGenerated?: boolean;
+  /** The page the alert came from. */
+  sourceUrl?: string;
 };
 
+/** Sample alerts, kept so the app has content before the watchers find anything. */
 export const ALERTS: Alert[] = [
   {
     id: 'a1',

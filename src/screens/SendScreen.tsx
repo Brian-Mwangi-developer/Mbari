@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {BackHandler, Pressable, ScrollView, StatusBar, StyleSheet, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {ChevronLeft, CircleCheck, Info, Link} from 'lucide-react-native';
+import {ChevronLeft, CircleCheck, Clock, Info, Link} from 'lucide-react-native';
 
 import {AudioPlayer} from '@/components/mbari/AudioPlayer';
 import {Avatar, Card, ChoicePills, Kicker, MetaLine, Panel, PillButton} from '@/components/mbari/parts';
@@ -19,11 +19,13 @@ type Language = (typeof LANGUAGES)[number];
  * approve it. Nothing goes out without this step.
  */
 export function SendScreen({alertId}: {alertId: string}) {
-  const {alerts, markSent, county} = useCommunity();
+  const {alerts, send, county} = useCommunity();
   const {closeSend} = useNavigation();
   const {resolved} = useAppearance();
   const theme = useTheme();
   const [language, setLanguage] = React.useState<Language>('Gĩkũyũ');
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const alert = alerts.find(a => a.id === alertId);
   const group = GROUPS.find(g => g.county === county);
 
@@ -39,6 +41,23 @@ export function SendScreen({alertId}: {alertId: string}) {
     return null;
   }
   const sent = alert.status === 'sent';
+  // A live alert needs a named approver on the dashboard; this only asks for it.
+  const waiting = !alert.sample && alert.status === 'waiting';
+
+  const onSend = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await send(alert.id);
+      if (alert.sample) {
+        closeSend();
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not send. Try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -87,20 +106,24 @@ export function SendScreen({alertId}: {alertId: string}) {
       </ScrollView>
 
       <View className="border-t border-border px-5 pb-4 pt-3">
+        {error ? <Text className="mb-2 text-center text-[14px] text-destructive">{error}</Text> : null}
         {sent ? (
           <View className="h-14 flex-row items-center justify-center gap-2">
             <CircleCheck size={20} color={theme.foreground} />
             <Text className="text-[16px] font-semibold">Sent to your community</Text>
           </View>
+        ) : waiting ? (
+          <View className="h-14 flex-row items-center justify-center gap-2">
+            <Clock size={20} color={theme.mutedForeground} />
+            <Text className="text-[16px] font-semibold text-muted-foreground">Waiting for an approver</Text>
+          </View>
         ) : (
           <PillButton
-            label="Approve and send"
+            label={alert.sample ? 'Approve and send' : 'Send for approval'}
             size="lg"
             block
-            onPress={() => {
-              markSent(alert.id);
-              closeSend();
-            }}
+            busy={busy}
+            onPress={onSend}
           />
         )}
       </View>

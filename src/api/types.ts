@@ -257,3 +257,27 @@ export type DemoAccount = {
 };
 
 export type DemoInfo = {enabled: boolean; organization?: string; accounts: DemoAccount[]};
+
+/** An alert as GET /api/v1/alerts returns it. */
+export type WireAlert = {
+  id: string;
+  county: string | null;
+  topic: string;
+  title: string;
+  summary: string;
+  action: string | null;
+  status: 'new' | 'waiting' | 'sent' | 'dismissed';
+  aiGenerated: boolean;
+  createdAt: string;
+  provenance: {
+    sourceId: string | null;
+    sourceName: string | null;
+    url: string;
+    domain: string;
+    fetchedAt: string;
+    contentHash: string;
+    summarizer: string;
+  };
+};
+
+export type AlertPage = {items: WireAlert[]; nextCursor: string | null};
