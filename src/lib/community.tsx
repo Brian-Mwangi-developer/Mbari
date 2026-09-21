@@ -5,9 +5,12 @@ import * as api from '@/api';
 import {ALERTS, type Alert, type County} from '@/data/static';
 import {toAlert} from '@/lib/alerts';
 import type {Recording} from '@/lib/recorder';
+import type {VoiceMessage} from '@/api/types';
 
 /** While the app is open, new alerts show up within this long. */
 const POLL_MS = 60_000;
+/** How often a translation in progress is checked. */
+const VOICE_POLL_MS = 2_000;
 
 type CommunityContextValue = {
   county: County;
@@ -27,6 +30,10 @@ type CommunityContextValue = {
   /** Voice messages recorded on this phone, by alert id, until they are sent. */
   recordings: Record<string, Recording>;
   saveRecording: (id: string, recording: Recording | null) => void;
+  /** "Translate to Gĩkũyũ" results, by alert id. Recording again clears one. */
+  voices: Record<string, VoiceMessage>;
+  /** Uploads the alert's recording and follows the translation until it is done. */
+  translate: (id: string) => Promise<void>;
 };
 
 const CommunityContext = React.createContext<CommunityContextValue | null>(null);
@@ -41,6 +48,11 @@ export function CommunityProvider({children}: {children: React.ReactNode}) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [recordings, setRecordings] = React.useState<Record<string, Recording>>({});
+  const [voices, setVoices] = React.useState<Record<string, VoiceMessage>>({});
+  const recordingsRef = React.useRef(recordings);
+  recordingsRef.current = recordings;
+  const voicesRef = React.useRef(voices);
+  voicesRef.current = voices;
 
   // A slow response for the previous county must not overwrite this one.
   const current = React.useRef(county);
@@ -97,7 +109,8 @@ export function CommunityProvider({children}: {children: React.ReactNode}) {
       setSamples(prev => prev.map(a => (a.id === id ? {...a, status: 'sent'} : a)));
       return;
     }
-    const wire = await api.requestSend(id);
+    const voice = voicesRef.current[id];
+    const wire = await api.requestSend(id, voice?.status === 'ready' ? voice.id : undefined);
     setLive(prev => prev.map(a => (a.id === id ? {...a, status: wire.status === 'dismissed' ? a.status : wire.status} : a)));
   }, []);
 
@@ -111,11 +124,53 @@ export function CommunityProvider({children}: {children: React.ReactNode}) {
       }
       return next;
     });
+    // A new take needs a new translation.
+    setVoices(prev => {
+      const next = {...prev};
+      delete next[id];
+      return next;
+    });
+  }, []);
+
+  // Follow translations in progress until each is ready or failed.
+  const pending = Object.values(voices).some(v => v.status !== 'ready' && v.status !== 'failed');
+  React.useEffect(() => {
+    if (!pending) {
+      return;
+    }
+    const timer = setInterval(async () => {
+      for (const [alertId, voice] of Object.entries(voicesRef.current)) {
+        if (voice.status === 'ready' || voice.status === 'failed') {
+          continue;
+        }
+        try {
+          const latest = await api.getVoice(voice.id);
+          // Ignore the answer if the take was replaced meanwhile.
+          setVoices(prev => (prev[alertId]?.id === latest.id ? {...prev, [alertId]: latest} : prev));
+        } catch {
+          // A missed poll is retried on the next tick.
+        }
+      }
+    }, VOICE_POLL_MS);
+    return () => clearInterval(timer);
+  }, [pending]);
+
+  const translate = React.useCallback(async (id: string) => {
+    const recording = recordingsRef.current[id];
+    if (!recording) {
+      throw new Error('Record your message first.');
+    }
+    const previous = voicesRef.current[id];
+    const voice =
+      previous?.status === 'failed'
+        ? await api.retryVoice(previous.id)
+        : await api.translateRecording(recording, SAMPLES.some(a => a.id === id) ? undefined : id);
+    setVoices(prev => ({...prev, [id]: voice}));
   }, []);
 
   const value = React.useMemo<CommunityContextValue>(
-    () => ({county, setCounty, alerts: [...live, ...samples], loading, error, refresh, send, recordings, saveRecording}),
-    [county, live, samples, loading, error, refresh, send, recordings, saveRecording],
+    () => ({county, setCounty, alerts: [...live, ...samples], loading, error, refresh, send, recordings, saveRecording, voices, translate}),
+    [county, live, samples, loading, error, refresh, send, recordings, saveRecording, voices, translate],
   );
 
   return <CommunityContext.Provider value={value}>{children}</CommunityContext.Provider>;

@@ -5,6 +5,8 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 
+import * as api from '@/api';
+import type {VoiceMessage} from '@/api/types';
 import {AppearanceProvider} from '@/lib/appearance';
 import {CommunityProvider, useCommunity} from '@/lib/community';
 import {NavigationProvider, useNavigation} from '@/lib/navigation';
@@ -86,5 +88,43 @@ test('the record screen shows what to say, and says so when this build cannot re
   expect(texts(r).some(t => t.startsWith('Recording needs the latest build'))).toBe(true);
   const mic = r.root.find(n => n.props.accessibilityLabel === 'Start recording' && typeof n.props.onPress === 'function');
   expect(mic.props.disabled).toBe(true);
+  await ReactTestRenderer.act(() => r.unmount());
+});
+
+test('a recorded message can be translated to Gĩkũyũ, and the result is marked as made by AI', async () => {
+  const ready: VoiceMessage = {
+    id: 'v1',
+    alertId: null,
+    status: 'ready',
+    error: null,
+    targetLanguage: 'kik',
+    targetLanguageName: 'Gĩkũyũ',
+    recording: {url: '/api/v1/voice/v1/audio/recording?exp=1&sig=x', durationMs: 8000},
+    transcript: 'come to the ward meeting',
+    spokenLanguage: 'en',
+    english: 'Come to the ward meeting.',
+    translation: 'Ũkai mũcemanio-inĩ wa wadi.',
+    audio: {url: '/api/v1/voice/v1/audio/translation?exp=1&sig=x', durationMs: 4000},
+    madeBy: {transcript: 'whisper', english: null, translation: 'nllb-200-distilled-600M', voice: 'mms-tts-kik'},
+    createdAt: '2026-09-21T12:00:00.000Z',
+    completedAt: '2026-09-21T12:00:30.000Z',
+  };
+  const upload = jest.spyOn(api, 'translateRecording').mockResolvedValue(ready);
+  const r = await render(<SendScreen alertId="a1" />);
+  await ReactTestRenderer.act(() => community.saveRecording('a1', {uri: 'file:///take.m4a', durationMs: 8000}));
+
+  const button = r.root.find(n => n.props.accessibilityLabel === 'Translate to Gĩkũyũ' && typeof n.props.onPress === 'function');
+  await ReactTestRenderer.act(() => button.props.onPress());
+
+  // A sample alert has no server copy, so the upload carries no alert id.
+  expect(upload).toHaveBeenCalledWith({uri: 'file:///take.m4a', durationMs: 8000}, undefined);
+  expect(texts(r)).toContain('Ũkai mũcemanio-inĩ wa wadi.');
+  expect(texts(r)).toContain('Come to the ward meeting.');
+  expect(texts(r).some(t => t.startsWith('Made by AI'))).toBe(true);
+
+  // Recording again throws the old translation away.
+  await ReactTestRenderer.act(() => community.saveRecording('a1', {uri: 'file:///take2.m4a', durationMs: 6000}));
+  expect(texts(r)).not.toContain('Ũkai mũcemanio-inĩ wa wadi.');
+  upload.mockRestore();
   await ReactTestRenderer.act(() => r.unmount());
 });

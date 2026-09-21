@@ -4,6 +4,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {ChevronLeft, CircleCheck, Clock, Info, Link, Mic, Pause, Play} from 'lucide-react-native';
 
 import {AudioPlayer} from '@/components/mbari/AudioPlayer';
+import {TranslateCard} from '@/components/mbari/TranslateCard';
 import {Avatar, Card, ChoicePills, Kicker, MetaLine, Panel, PillButton} from '@/components/mbari/parts';
 import {Text} from '@/components/ui/text';
 import {APPROVER, GROUPS, LANGUAGES} from '@/data/static';
@@ -20,7 +21,7 @@ type Language = (typeof LANGUAGES)[number];
  * approve it. Nothing goes out without this step.
  */
 export function SendScreen({alertId}: {alertId: string}) {
-  const {alerts, send, county, recordings} = useCommunity();
+  const {alerts, send, county, recordings, voices} = useCommunity();
   const {closeSend, openRecord} = useNavigation();
   const {resolved} = useAppearance();
   const theme = useTheme();
@@ -44,6 +45,9 @@ export function SendScreen({alertId}: {alertId: string}) {
   const sent = alert.status === 'sent';
   // A live alert needs a named approver on the dashboard; this only asks for it.
   const waiting = !alert.sample && alert.status === 'waiting';
+  const voice = voices[alert.id];
+  // Wait for a translation in progress, so the approver gets the voice too.
+  const translating = Boolean(voice && voice.status !== 'ready' && voice.status !== 'failed');
 
   const onSend = async () => {
     setBusy(true);
@@ -96,10 +100,33 @@ export function SendScreen({alertId}: {alertId: string}) {
         ) : null}
 
         <Kicker className="mb-2.5 mt-6">Voice message</Kicker>
-        <ChoicePills options={LANGUAGES} value={language} onChange={setLanguage} />
-        <Card className="mt-3 px-4 py-3.5">
-          <AudioPlayer key={language} duration="1:05" />
-        </Card>
+        {recordings[alert.id] ? (
+          <TranslateCard alertId={alert.id} />
+        ) : alert.sample ? (
+          <>
+            <ChoicePills options={LANGUAGES} value={language} onChange={setLanguage} />
+            <Card className="mt-3 px-4 py-3.5">
+              <AudioPlayer key={language} duration="1:05" />
+            </Card>
+          </>
+        ) : (
+          <Card className="px-4 py-4">
+            <Text className="text-[14px] leading-[21px] text-muted-foreground">
+              Record the update in your own voice. Mbarĩ can then turn it into a Gĩkũyũ voice message.
+            </Text>
+            <PillButton
+              label="Record a message"
+              icon={Mic}
+              variant="line"
+              block
+              onPress={() => {
+                closeSend();
+                openRecord(alert.id);
+              }}
+              className="mt-3.5"
+            />
+          </Card>
+        )}
 
         <View className="mt-4 flex-row items-start gap-2">
           <Info size={15} color={theme.mutedForeground} style={styles.infoIcon} />
@@ -134,10 +161,10 @@ export function SendScreen({alertId}: {alertId: string}) {
           </View>
         ) : (
           <PillButton
-            label={alert.sample ? 'Approve and send' : 'Send for approval'}
+            label={translating ? 'Translating…' : alert.sample ? 'Approve and send' : 'Send for approval'}
             size="lg"
             block
-            busy={busy}
+            busy={busy || translating}
             onPress={onSend}
           />
         )}

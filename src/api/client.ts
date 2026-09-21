@@ -63,7 +63,9 @@ export async function apiFetch<T>(path: string, options: Options = {}): Promise<
     Accept: 'application/json',
     Origin: NATIVE_APP_ORIGIN,
   };
-  if (body !== undefined) {
+  // FormData sets its own multipart Content-Type, with the boundary.
+  const form = typeof FormData !== 'undefined' && body instanceof FormData;
+  if (body !== undefined && !form) {
     headers['Content-Type'] = 'application/json';
   }
   if (!anonymous) {
@@ -83,7 +85,7 @@ export async function apiFetch<T>(path: string, options: Options = {}): Promise<
       method,
       headers,
       signal: controller.signal,
-      ...(body !== undefined ? {body: JSON.stringify(body)} : {}),
+      ...(body !== undefined ? {body: form ? (body as FormData) : JSON.stringify(body)} : {}),
     });
   } catch (error) {
     const aborted = error instanceof Error && error.name === 'AbortError';

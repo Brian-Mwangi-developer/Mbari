@@ -302,3 +302,27 @@ export type AlertEvidence = {
   /** The notice itself (often a PDF) when the page links to it; null when `url` is the closest link. */
   itemUrl: string | null;
 };
+
+/** Where a voice message is in "Translate to Gĩkũyũ". */
+export type VoiceStatus = 'queued' | 'transcribing' | 'polishing' | 'translating' | 'speaking' | 'ready' | 'failed';
+
+/** A recording and its machine translation, from /api/v1/voice. Audio URLs are signed paths on the API. */
+export type VoiceMessage = {
+  id: string;
+  alertId: string | null;
+  status: VoiceStatus;
+  error: string | null;
+  targetLanguage: string;
+  targetLanguageName: string;
+  recording: {url: string; durationMs: number};
+  /** What Whisper heard, in English. */
+  transcript: string | null;
+  spokenLanguage: string | null;
+  /** The transcript tidied for translation (or as heard). */
+  english: string | null;
+  translation: string | null;
+  audio: {url: string; durationMs: number | null} | null;
+  madeBy: {transcript: string | null; english: string | null; translation: string | null; voice: string | null};
+  createdAt: string;
+  completedAt: string | null;
+};

@@ -26,6 +26,7 @@ import type {
   WireAlert,
   Role,
   Organization,
+  VoiceMessage,
 } from './types';
 
 /** Every backend call the app makes, in one place. */
@@ -121,9 +122,38 @@ export const getAlerts = (county: string, limit = 30) =>
 export const getAlertEvidence = (id: string) =>
   apiFetch<AlertEvidence>(`/api/v1/alerts/${encodeURIComponent(id)}/evidence`);
 
-/** "Send to community": the alert waits for an NGO approver. Nothing goes out yet. */
-export const requestSend = (id: string) =>
-  apiFetch<WireAlert>(`/api/v1/alerts/${encodeURIComponent(id)}/request-send`, {method: 'POST'});
+/**
+ * "Send to community": the alert waits for an NGO approver. Nothing goes out
+ * yet. A translated voice message goes with it for the approver to hear.
+ */
+export const requestSend = (id: string, voiceMessageId?: string) =>
+  apiFetch<WireAlert>(`/api/v1/alerts/${encodeURIComponent(id)}/request-send`, {
+    method: 'POST',
+    body: voiceMessageId ? {voiceMessageId} : {},
+  });
+
+// ── Voice ─────────────────────────────────────────────────────────────────────
+
+/**
+ * "Translate to Gĩkũyũ": uploads the recording. The server works through it
+ * in the background; poll getVoice until it is ready or failed.
+ */
+export function translateRecording(recording: {uri: string; durationMs: number}, alertId?: string): Promise<VoiceMessage> {
+  const form = new FormData();
+  // React Native reads the file from the uri when it sends the form.
+  form.append('audio', {uri: recording.uri, name: 'voice.m4a', type: 'audio/mp4'} as unknown as Blob);
+  form.append('durationMs', String(Math.round(recording.durationMs)));
+  form.append('language', 'kik');
+  if (alertId) {
+    form.append('alertId', alertId);
+  }
+  return apiFetch<VoiceMessage>('/api/v1/voice', {method: 'POST', body: form});
+}
+
+export const getVoice = (id: string) => apiFetch<VoiceMessage>(`/api/v1/voice/${encodeURIComponent(id)}`);
+
+export const retryVoice = (id: string) =>
+  apiFetch<VoiceMessage>(`/api/v1/voice/${encodeURIComponent(id)}/retry`, {method: 'POST'});
 
 // ── Content ───────────────────────────────────────────────────────────────────
 
