@@ -20,6 +20,9 @@ import type {
   Article,
   ArchiveItem,
   Feed,
+  DemoInfo,
+  Role,
+  Organization,
 } from './types';
 
 /** Every backend call the app makes, in one place. */
@@ -65,7 +68,35 @@ export async function signOut(): Promise<void> {
 
 // ── Profile ───────────────────────────────────────────────────────────────────
 
-export const getAccount = () => apiFetch<Account>('/api/v1/me');
+/** What GET /api/v1/me returns. */
+type MeResponse = {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  role: Role;
+  onboardingDone: boolean;
+  organization: Organization | null;
+  counties: string[];
+  topics: string[];
+};
+
+/**
+ * The signed-in account. The backend has no timezone or library settings; the
+ * fields the older screens still read get fixed values here.
+ */
+export async function getAccount(): Promise<Account> {
+  const me = await apiFetch<MeResponse>('/api/v1/me');
+  return {
+    ...me,
+    timezone: 'Africa/Nairobi',
+    interests: me.topics,
+    unreadExpiryDays: 14,
+  };
+}
+
+/** The demo logins the sign-in screen offers. Public; `enabled: false` hides them. */
+export const getDemo = () => apiFetch<DemoInfo>('/api/v1/demo', {anonymous: true});
 
 export const updateProfile = (patch: {
   timezone?: string;

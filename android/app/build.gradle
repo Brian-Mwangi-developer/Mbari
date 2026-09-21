@@ -115,6 +115,9 @@ android {
             minifyEnabled enableProguardInReleaseBuilds
             shrinkResources enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            // Hackathon: the release APK talks to mbari-backend over plain http
+            // on the LAN (src/api/config.ts). Remove once the API has https.
+            manifestPlaceholders = [usesCleartextTraffic: "true"]
         }
     }
 }

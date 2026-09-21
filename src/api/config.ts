@@ -1,11 +1,14 @@
 /**
- * The backend this build talks to: production, behind Caddy on the Frankfurt
- * instance, with a Let's Encrypt certificate.
+ * The backend this build talks to: mbari-backend on the laptop, by its Wi-Fi
+ * address, so debug builds, the emulator and an exported release APK all
+ * reach it. The phone must be on the same Wi-Fi as the laptop.
  *
- * To point a build at a laptop instead, use 'http://10.0.2.2:4000' on the
- * Android emulator, or an ngrok URL for a physical device.
+ * The address changes when the laptop joins another network. Find the new one
+ * with `ipconfig getifaddr en0` and rebuild. Plain http is allowed in release
+ * builds for this reason (android/app/build.gradle); switch to the https API
+ * once it is deployed.
  */
-export const API_BASE_URL = 'https://api.mbari.com';
+export const API_BASE_URL = 'http://172.16.104.82:4000';
 
 export const API_TIMEOUT_MS = 20000;
 
@@ -25,9 +28,7 @@ export const GOOGLE_WEB_CLIENT_ID = '131242635298-7b5i9rsqubq49kbtomhb8uki45817n
 export const NATIVE_APP_ORIGIN = 'mbari://app';
 
 /**
- * Whether the app talks to the backend. While it is off (no server yet),
- * sign-in, sign-up and Google sign-in skip the network and go straight to the
- * Alerts home with a local account, and nothing is remembered between launches.
- * Turn this on once api.mbari.com exists.
+ * Whether the app talks to the backend. Off, sign-in skips the network and
+ * goes straight in with a local account (useful for UI work without a server).
  */
-export const BACKEND_ENABLED = false;
+export const BACKEND_ENABLED = true;

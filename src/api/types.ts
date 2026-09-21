@@ -156,12 +156,22 @@ export type Feed = {
   muted: boolean;
 };
 
+export type Role = 'member' | 'ngo' | 'admin';
+
+export type Organization = {id: string; name: string; slug: string; county: string | null};
+
 export type Account = {
   id: string;
   name: string;
   email: string;
   image: string | null;
   onboardingDone: boolean;
+  role: Role;
+  organization: Organization | null;
+  /** Counties followed; empty follows every county. */
+  counties: string[];
+  /** Topics followed; empty follows every topic. */
+  topics: string[];
   timezone: string;
   interests: string[];
   /** Days an unread article stays in the library after it arrives. */
@@ -235,3 +245,15 @@ export type DeliverySettings = {
 export type TestNotificationResult =
   | {status: 'sent' | 'dry_run'; deliveryId: string; itemId: string; devices: number}
   | {status: 'skipped' | 'failed'; deliveryId: string | null; reason: string};
+
+/** A ready-made login for judges, from GET /api/v1/demo. */
+export type DemoAccount = {
+  app: 'web' | 'mobile';
+  label: string;
+  name: string;
+  email: string;
+  password: string;
+  role: Role;
+};
+
+export type DemoInfo = {enabled: boolean; organization?: string; accounts: DemoAccount[]};
