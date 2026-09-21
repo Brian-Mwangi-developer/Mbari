@@ -16,6 +16,7 @@ import {SessionProvider, useSession} from '@/lib/session';
 import {InterestsOnboarding} from '@/screens/InterestsOnboarding';
 import {SignInScreen} from '@/screens/SignInScreen';
 import {AlertScreen} from '@/screens/AlertScreen';
+import {RecordScreen} from '@/screens/RecordScreen';
 import {SendScreen} from '@/screens/SendScreen';
 import {CommunityScreen} from '@/screens/tabs/CommunityScreen';
 import {HomeScreen} from '@/screens/tabs/HomeScreen';
@@ -69,10 +70,13 @@ function Root() {
 
 /** The four tabs, or the send page over them. */
 function SignedIn() {
-  const {sendingId, viewingId} = useNavigation();
-  // Sending stacks over reading: closing the send page returns to the alert.
+  const {sendingId, recordingId, viewingId} = useNavigation();
+  // Read, then record, then send: each closes back to the one before.
   if (sendingId) {
     return <SendScreen alertId={sendingId} />;
+  }
+  if (recordingId) {
+    return <RecordScreen alertId={recordingId} />;
   }
   if (viewingId) {
     return <AlertScreen alertId={viewingId} />;

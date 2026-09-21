@@ -36,6 +36,10 @@ type NavigationContextValue = {
   viewingId: string | null;
   openAlert: (alertId: string) => void;
   closeAlert: () => void;
+  /** The alert a voice message is being recorded for. Shown over the alert page. */
+  recordingId: string | null;
+  openRecord: (alertId: string) => void;
+  closeRecord: () => void;
   /** The alert being prepared for sending, shown over the tabs (and over the alert page). */
   sendingId: string | null;
   openSend: (alertId: string) => void;
@@ -55,6 +59,7 @@ export function NavigationProvider({children}: {children: React.ReactNode}) {
   const [detail, setDetail] = React.useState<Detail | null>(null);
   const [detailQuery, setDetailQuery] = React.useState('');
   const [viewingId, setViewingId] = React.useState<string | null>(null);
+  const [recordingId, setRecordingId] = React.useState<string | null>(null);
   const [sendingId, setSendingId] = React.useState<string | null>(null);
 
   const value = React.useMemo<NavigationContextValue>(
@@ -64,6 +69,7 @@ export function NavigationProvider({children}: {children: React.ReactNode}) {
       setTab: next => {
         setDetail(null);
         setViewingId(null);
+        setRecordingId(null);
         setSendingId(null);
         setTabState(next);
       },
@@ -80,11 +86,14 @@ export function NavigationProvider({children}: {children: React.ReactNode}) {
       viewingId,
       openAlert: setViewingId,
       closeAlert: () => setViewingId(null),
+      recordingId,
+      openRecord: setRecordingId,
+      closeRecord: () => setRecordingId(null),
       sendingId,
       openSend: setSendingId,
       closeSend: () => setSendingId(null),
     }),
-    [tab, detail, detailQuery, viewingId, sendingId],
+    [tab, detail, detailQuery, viewingId, recordingId, sendingId],
   );
 
   return (

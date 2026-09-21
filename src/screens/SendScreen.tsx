@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {BackHandler, Pressable, ScrollView, StatusBar, StyleSheet, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {ChevronLeft, CircleCheck, Clock, Info, Link} from 'lucide-react-native';
+import {ChevronLeft, CircleCheck, Clock, Info, Link, Mic, Pause, Play} from 'lucide-react-native';
 
 import {AudioPlayer} from '@/components/mbari/AudioPlayer';
 import {Avatar, Card, ChoicePills, Kicker, MetaLine, Panel, PillButton} from '@/components/mbari/parts';
@@ -10,6 +10,7 @@ import {APPROVER, GROUPS, LANGUAGES} from '@/data/static';
 import {useAppearance} from '@/lib/appearance';
 import {useCommunity} from '@/lib/community';
 import {useNavigation} from '@/lib/navigation';
+import {formatClock, playRecording, stopPlayback, type Recording} from '@/lib/recorder';
 import {useTheme} from '@/lib/theme';
 
 type Language = (typeof LANGUAGES)[number];
@@ -19,8 +20,8 @@ type Language = (typeof LANGUAGES)[number];
  * approve it. Nothing goes out without this step.
  */
 export function SendScreen({alertId}: {alertId: string}) {
-  const {alerts, send, county} = useCommunity();
-  const {closeSend} = useNavigation();
+  const {alerts, send, county, recordings} = useCommunity();
+  const {closeSend, openRecord} = useNavigation();
   const {resolved} = useAppearance();
   const theme = useTheme();
   const [language, setLanguage] = React.useState<Language>('Gĩkũyũ');
@@ -80,6 +81,20 @@ export function SendScreen({alertId}: {alertId: string}) {
           <Panel label="What to do">{alert.action}</Panel>
         </View>
 
+        {recordings[alert.id] ? (
+          <>
+            <Kicker className="mb-2.5 mt-6">Your recording</Kicker>
+            <YourRecording
+              recording={recordings[alert.id]}
+              onRecordAgain={() => {
+                stopPlayback();
+                closeSend();
+                openRecord(alert.id);
+              }}
+            />
+          </>
+        ) : null}
+
         <Kicker className="mb-2.5 mt-6">Voice message</Kicker>
         <ChoicePills options={LANGUAGES} value={language} onChange={setLanguage} />
         <Card className="mt-3 px-4 py-3.5">
@@ -128,6 +143,51 @@ export function SendScreen({alertId}: {alertId: string}) {
         )}
       </View>
     </SafeAreaView>
+  );
+}
+
+/** The sender's own take: play it once more before asking for approval, or record again. */
+function YourRecording({recording, onRecordAgain}: {recording: Recording; onRecordAgain: () => void}) {
+  const theme = useTheme();
+  const [playing, setPlaying] = React.useState(false);
+
+  React.useEffect(() => () => stopPlayback(), []);
+
+  const toggle = async () => {
+    if (playing) {
+      stopPlayback();
+      return;
+    }
+    setPlaying(true);
+    try {
+      await playRecording(recording.uri);
+    } finally {
+      setPlaying(false);
+    }
+  };
+
+  return (
+    <Card className="flex-row items-center gap-3 px-4 py-3.5">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={playing ? 'Stop playing' : 'Play your recording'}
+        onPress={toggle}
+        className="h-11 w-11 items-center justify-center rounded-full bg-primary active:opacity-80">
+        {playing ? (
+          <Pause size={18} color={theme.primaryForeground} strokeWidth={2.4} />
+        ) : (
+          <Play size={18} color={theme.primaryForeground} strokeWidth={2.4} />
+        )}
+      </Pressable>
+      <View className="flex-1">
+        <Text className="text-[15px] font-semibold">Your voice · {formatClock(recording.durationMs)}</Text>
+        <Text className="text-[13px] text-muted-foreground">Recorded on this phone</Text>
+      </View>
+      <Pressable accessibilityRole="button" onPress={onRecordAgain} className="flex-row items-center gap-1 py-2 active:opacity-60">
+        <Mic size={15} color={theme.foreground} strokeWidth={2.3} />
+        <Text className="text-[13.5px] font-semibold">Record again</Text>
+      </Pressable>
+    </Card>
   );
 }
 

@@ -4,6 +4,7 @@ import {AppState} from 'react-native';
 import * as api from '@/api';
 import {ALERTS, type Alert, type County} from '@/data/static';
 import {toAlert} from '@/lib/alerts';
+import type {Recording} from '@/lib/recorder';
 
 /** While the app is open, new alerts show up within this long. */
 const POLL_MS = 60_000;
@@ -23,6 +24,9 @@ type CommunityContextValue = {
    * approver; a sample is marked sent on this device only.
    */
   send: (id: string) => Promise<void>;
+  /** Voice messages recorded on this phone, by alert id, until they are sent. */
+  recordings: Record<string, Recording>;
+  saveRecording: (id: string, recording: Recording | null) => void;
 };
 
 const CommunityContext = React.createContext<CommunityContextValue | null>(null);
@@ -36,6 +40,7 @@ export function CommunityProvider({children}: {children: React.ReactNode}) {
   const [samples, setSamples] = React.useState<Alert[]>(SAMPLES);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [recordings, setRecordings] = React.useState<Record<string, Recording>>({});
 
   // A slow response for the previous county must not overwrite this one.
   const current = React.useRef(county);
@@ -96,9 +101,21 @@ export function CommunityProvider({children}: {children: React.ReactNode}) {
     setLive(prev => prev.map(a => (a.id === id ? {...a, status: wire.status === 'dismissed' ? a.status : wire.status} : a)));
   }, []);
 
+  const saveRecording = React.useCallback((id: string, recording: Recording | null) => {
+    setRecordings(prev => {
+      const next = {...prev};
+      if (recording) {
+        next[id] = recording;
+      } else {
+        delete next[id];
+      }
+      return next;
+    });
+  }, []);
+
   const value = React.useMemo<CommunityContextValue>(
-    () => ({county, setCounty, alerts: [...live, ...samples], loading, error, refresh, send}),
-    [county, live, samples, loading, error, refresh, send],
+    () => ({county, setCounty, alerts: [...live, ...samples], loading, error, refresh, send, recordings, saveRecording}),
+    [county, live, samples, loading, error, refresh, send, recordings, saveRecording],
   );
 
   return <CommunityContext.Provider value={value}>{children}</CommunityContext.Provider>;

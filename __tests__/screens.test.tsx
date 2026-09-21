@@ -9,6 +9,7 @@ import {AppearanceProvider} from '@/lib/appearance';
 import {CommunityProvider, useCommunity} from '@/lib/community';
 import {NavigationProvider, useNavigation} from '@/lib/navigation';
 import {SessionProvider} from '@/lib/session';
+import {RecordScreen} from '@/screens/RecordScreen';
 import {SendScreen} from '@/screens/SendScreen';
 import {CommunityScreen} from '@/screens/tabs/CommunityScreen';
 import {HomeScreen} from '@/screens/tabs/HomeScreen';
@@ -55,12 +56,12 @@ test.each([
   expect(texts(r)).toContain(title);
 });
 
-test('Home leads with the newest Kiambu update and opens it for sending', async () => {
+test('Home leads with the newest Kiambu update and opens it for recording', async () => {
   const r = await render(<HomeScreen />);
   expect(texts(r)).toContain('Kiambu County opens public participation on the 2026/27 budget');
   const send = r.root.find(n => n.props.accessibilityLabel === 'Send to community' && typeof n.props.onPress === 'function');
   await ReactTestRenderer.act(() => send.props.onPress());
-  expect(nav.sendingId).toBe('a1');
+  expect(nav.recordingId).toBe('a1');
 });
 
 test('switching county changes what Home shows', async () => {
@@ -75,4 +76,15 @@ test('approving an update marks it sent', async () => {
   const approve = r.root.find(n => n.props.accessibilityLabel === 'Approve and send' && typeof n.props.onPress === 'function');
   await ReactTestRenderer.act(() => approve.props.onPress());
   expect(community.alerts.find(a => a.id === 'a1')?.status).toBe('sent');
+});
+
+test('the record screen shows what to say, and says so when this build cannot record', async () => {
+  const r = await render(<RecordScreen alertId="a1" />);
+  expect(texts(r)).toContain('What to say');
+  expect(texts(r)).toContain('Residents can give their views at ward meetings from 23 to 30 September. Bring your ID.');
+  // No native recorder under Jest, as in an APK built before it existed.
+  expect(texts(r).some(t => t.startsWith('Recording needs the latest build'))).toBe(true);
+  const mic = r.root.find(n => n.props.accessibilityLabel === 'Start recording' && typeof n.props.onPress === 'function');
+  expect(mic.props.disabled).toBe(true);
+  await ReactTestRenderer.act(() => r.unmount());
 });

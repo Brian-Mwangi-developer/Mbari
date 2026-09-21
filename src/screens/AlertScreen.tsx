@@ -35,7 +35,7 @@ type Evidence = {status: 'loading'} | {status: 'ready'; data: AlertEvidence} | {
  */
 export function AlertScreen({alertId}: {alertId: string}) {
   const {alerts} = useCommunity();
-  const {closeAlert, openSend} = useNavigation();
+  const {closeAlert, openRecord} = useNavigation();
   const {resolved} = useAppearance();
   const theme = useTheme();
   const alert = alerts.find(a => a.id === alertId);
@@ -108,7 +108,7 @@ export function AlertScreen({alertId}: {alertId: string}) {
       </ScrollView>
 
       <View className="border-t border-border px-5 pb-4 pt-3">
-        <SendFooter alert={alert} onSend={() => openSend(alert.id)} />
+        <SendFooter alert={alert} onSend={() => openRecord(alert.id)} />
       </View>
     </SafeAreaView>
   );

@@ -3,6 +3,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Android 13+: asked for at runtime before any recommendation is pushed. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Voice messages recorded on the Send to community screen. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
       android:name=".MainApplication"

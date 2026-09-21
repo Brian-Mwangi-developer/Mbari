@@ -18,7 +18,7 @@ function today(): string {
 /** Home: the newest update for your county, then what came before. */
 export function HomeScreen() {
   const {county, alerts, error, refresh} = useCommunity();
-  const {openSend, openAlert} = useNavigation();
+  const {openRecord, openAlert} = useNavigation();
   const theme = useTheme();
   const [refreshing, setRefreshing] = React.useState(false);
   // Live alerts come first in `alerts`, so a real update leads over a sample.
@@ -47,7 +47,7 @@ export function HomeScreen() {
           </View>
         ) : null}
         {lead ? (
-          <LeadCard alert={lead} onOpen={() => openAlert(lead.id)} onSend={() => openSend(lead.id)} />
+          <LeadCard alert={lead} onOpen={() => openAlert(lead.id)} onSend={() => openRecord(lead.id)} />
         ) : (
           <AllCaughtUp county={county} />
         )}
